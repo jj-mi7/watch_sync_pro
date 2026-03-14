@@ -3,6 +3,7 @@
     "name": "BandBridge",
     "slug": "bandbridge",
     "version": "1.0.0",
+    "main": "index.js",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
     "scheme": "bandbridge",
