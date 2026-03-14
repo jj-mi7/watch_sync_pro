@@ -4,11 +4,6 @@
     "slug": "bandbridge",
     "version": "1.0.0",
     "orientation": "portrait",
-    "extra": {
-      "eas": {
-        "projectId": "b36486ef-9814-47fb-a228-0393019940e9"
-      }
-    },
     "icon": "./assets/images/icon.png",
     "scheme": "bandbridge",
     "userInterfaceStyle": "dark",
@@ -43,6 +38,7 @@
       [
         "expo-router",
         {
+          "root": "./app",
           "origin": "https://replit.com/"
         }
       ],
@@ -58,6 +54,12 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "db9b24db-69a0-4bc7-9903-fd27a1a57e5a"
+      }
+    },
+    "owner": "jojomi7"
   }
 }
