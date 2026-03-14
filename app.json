@@ -1,0 +1,12 @@
+{
+  "expo": {
+    "extra": {
+      "eas": {
+        "projectId": "b36486ef-9814-47fb-a228-0393019940e9"
+      }
+    },
+    "android": {
+      "package": "com.jjwatch.workspace"
+    }
+  }
+}
