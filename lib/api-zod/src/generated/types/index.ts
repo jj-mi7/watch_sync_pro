@@ -6,19 +6,4 @@
  * OpenAPI spec version: 0.1.0
  */
 
-export * from "./authorizationSessionHeaderParameter";
-export * from "./authUser";
-export * from "./authUserEnvelope";
-export * from "./beginBrowserLoginParams";
-export * from "./dailyGoalRequest";
-export * from "./dailyGoalResponse";
-export * from "./fitnessLog";
-export * from "./fitnessLogsResponse";
-export * from "./fitnessSyncRequest";
-export * from "./fitnessSyncResponse";
-export * from "./getFitnessLogsParams";
-export * from "./handleBrowserLoginCallbackParams";
 export * from "./healthStatus";
-export * from "./logoutMobileSessionSuccess";
-export * from "./mobileTokenExchangeRequest";
-export * from "./mobileTokenExchangeSuccess";

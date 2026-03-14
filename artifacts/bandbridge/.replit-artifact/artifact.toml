@@ -1,0 +1,27 @@
+kind = "mobile"
+previewPath = "/"
+title = "BandBridge"
+version = "1.0.0"
+id = "artifacts/bandbridge"
+router = "expo-domain"
+
+[[integratedSkills]]
+name = "expo"
+version = "1.0.0"
+
+[[services]]
+ensurePreviewReachable = "/status"
+localPort = 25217
+name = "expo"
+paths = ["/"]
+
+[services.development]
+run = "pnpm --filter @workspace/bandbridge run dev"
+
+[services.env]
+PORT = "25217"
+BASE_PATH = "/"
+
+[services.production]
+build = ["pnpm", "--filter", "@workspace/bandbridge", "run", "build"]
+run = ["pnpm", "--filter", "@workspace/bandbridge", "run", "serve"]
