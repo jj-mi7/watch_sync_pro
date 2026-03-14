@@ -4,6 +4,11 @@
     "slug": "bandbridge",
     "version": "1.0.0",
     "orientation": "portrait",
+    "extra": {
+      "eas": {
+        "projectId": "b36486ef-9814-47fb-a228-0393019940e9"
+      }
+    },
     "icon": "./assets/images/icon.png",
     "scheme": "bandbridge",
     "userInterfaceStyle": "dark",
@@ -21,6 +26,7 @@
       }
     },
     "android": {
+      "package": "com.jjwatch.workspace",
       "permissions": [
         "android.permission.BLUETOOTH",
         "android.permission.BLUETOOTH_ADMIN",
