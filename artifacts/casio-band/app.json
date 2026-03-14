@@ -27,39 +27,9 @@
     "web": {
       "favicon": "./assets/images/icon.png"
     },
-    "plugins": [
-      [
-        "expo-router",
-        {
-          "origin": "https://replit.com/"
-        }
-      ],
-      "expo-web-browser",
-      "expo-secure-store",
-      [
-        "expo-location",
-        {
-          "locationAlwaysAndWhenInUsePermission": "Allow Casio ABL-100WE to use your location for activity tracking."
-        }
-      ],
-      [
-        "expo-image-picker",
-        {
-          "photosPermission": "Allow Casio ABL-100WE to access your photos to set a watch photo."
-        }
-      ],
-      [
-        "expo-notifications",
-        {
-          "icon": "./assets/images/icon.png",
-          "color": "#00E5FF",
-          "sounds": []
-        }
-      ]
-    ],
+    "plugins": [],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": false
     }
   }
 }

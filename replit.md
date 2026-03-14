@@ -21,7 +21,8 @@ pnpm workspace monorepo using TypeScript. Each package manages its own dependenc
 ```text
 artifacts-monorepo/
 ├── artifacts/              # Deployable applications
-│   └── api-server/         # Express API server
+│   ├── api-server/         # Express API server (port 3000 dev, port 3000 prod)
+│   └── casio-band/         # Expo React Native app (port 5000 dev/web)
 ├── lib/                    # Shared libraries
 │   ├── api-spec/           # OpenAPI spec + Orval codegen config
 │   ├── api-client-react/   # Generated React Query hooks
@@ -34,6 +35,14 @@ artifacts-monorepo/
 ├── tsconfig.json           # Root TS project references
 └── package.json            # Root package with hoisted devDeps
 ```
+
+## Replit Setup
+
+- **Database**: PostgreSQL provisioned via Replit. Schema pushed with `pnpm --filter @workspace/db run push`
+- **Workflows**:
+  - `Start Backend` — runs `PORT=3000 pnpm --filter @workspace/api-server run dev` (console, port 3000)
+  - `Start application` — runs `PORT=5000 pnpm --filter @workspace/casio-band run dev` (webview, port 5000)
+- **Deployment**: autoscale target; builds Expo static bundle, serves via `server/serve.js` on port 5000 + API on port 3000
 
 ## TypeScript & Composite Projects
 

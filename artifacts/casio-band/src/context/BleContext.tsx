@@ -1,6 +1,6 @@
-import React, { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from "react";
-import { Platform, Alert, Vibration } from "react-native";
-import { type BleStatus, type BleDevice, type WatchData, isMockMode, generateMockData } from "@/lib/bluetooth";
+import React, { createContext, useContext, useState, useCallback, useMemo, type ReactNode } from 'react';
+import { Platform, Vibration } from 'react-native';
+import { type BleStatus, type BleDevice, type WatchData, isMockMode, generateMockData } from '@/lib/bluetooth';
 
 interface BleContextValue {
   status: BleStatus;
@@ -20,7 +20,7 @@ interface BleContextValue {
 const BleContext = createContext<BleContextValue | null>(null);
 
 export function BleProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<BleStatus>("idle");
+  const [status, setStatus] = useState<BleStatus>('idle');
   const [connectedDevice, setConnectedDevice] = useState<BleDevice | null>(null);
   const [scannedDevices, setScannedDevices] = useState<BleDevice[]>([]);
   const [watchData, setWatchData] = useState<WatchData | null>(null);
@@ -30,84 +30,83 @@ export function BleProvider({ children }: { children: ReactNode }) {
   const startScan = useCallback(async () => {
     if (isMockMode()) {
       setIsScanning(true);
+      setStatus('scanning');
       setScannedDevices([]);
       setTimeout(() => {
         setScannedDevices([
-          { id: "mock-casio-001", name: "Casio ABL-100WE", rssi: -62 },
-          { id: "mock-device-002", name: "Smart Band Pro", rssi: -78 },
+          { id: 'mock-other-001', name: 'Smart Band Pro', rssi: -78 },
         ]);
+      }, 1200);
+      setTimeout(() => {
+        setScannedDevices(prev => [...prev, { id: 'mock-other-002', name: 'Fitbit Charge 5', rssi: -85 }]);
+      }, 2500);
+      setTimeout(() => {
+        setScannedDevices(prev => [...prev, { id: 'mock-casio-001', name: 'Casio ABL-100WE', rssi: -62 }]);
         setIsScanning(false);
-      }, 2000);
+        setStatus('idle');
+      }, 4000);
       return;
     }
 
     try {
-      const { scanForDevices } = await import("@/lib/bluetooth");
-      const { storage } = await import("@/lib/storage");
+      const { scanForDevices } = await import('@/lib/bluetooth');
+      const { storage } = await import('@/lib/storage');
       const uuids = await storage.getBleUuids();
       setIsScanning(true);
-      setStatus("scanning");
+      setStatus('scanning');
       setScannedDevices([]);
       await scanForDevices(
-        (device) => {
+        device => {
           setScannedDevices(prev => {
-            const exists = prev.find(d => d.id === device.id);
-            if (exists) return prev;
+            if (prev.find(d => d.id === device.id)) return prev;
             return [...prev, device];
           });
         },
         [uuids.serviceUuid],
-        12000
+        12000,
       );
-    } catch (err) {
-      setStatus("error");
+    } catch {
+      setStatus('error');
     } finally {
       setIsScanning(false);
-      if (status === "scanning") setStatus("idle");
+      setStatus(s => s === 'scanning' ? 'idle' : s);
     }
-  }, [status]);
+  }, []);
 
   const stopScan = useCallback(async () => {
     if (!isMockMode()) {
-      const { stopScan: stop } = await import("@/lib/bluetooth");
+      const { stopScan: stop } = await import('@/lib/bluetooth');
       await stop();
     }
     setIsScanning(false);
-    setStatus("idle");
+    setStatus('idle');
   }, []);
 
   const connectTo = useCallback(async (device: BleDevice) => {
-    setStatus("connecting");
+    setStatus('connecting');
     if (isMockMode()) {
-      await new Promise(r => setTimeout(r, 1500));
+      await new Promise(r => setTimeout(r, 1200));
       setConnectedDevice(device);
-      setStatus("connected");
-      const data = generateMockData();
-      setWatchData(data);
+      setStatus('connected');
+      setWatchData(generateMockData());
       setBattery(85);
       return;
     }
     try {
-      const { connectToDevice } = await import("@/lib/bluetooth");
+      const { connectToDevice } = await import('@/lib/bluetooth');
       const ok = await connectToDevice(device.id);
-      if (ok) {
-        setConnectedDevice(device);
-        setStatus("connected");
-      } else {
-        setStatus("error");
-      }
-    } catch {
-      setStatus("error");
-    }
+      if (ok) { setConnectedDevice(device); setStatus('connected'); }
+      else setStatus('error');
+    } catch { setStatus('error'); }
   }, []);
 
   const disconnect = useCallback(async () => {
     if (!isMockMode() && connectedDevice) {
-      const { disconnectDevice } = await import("@/lib/bluetooth");
+      const { disconnectDevice } = await import('@/lib/bluetooth');
       await disconnectDevice(connectedDevice.id);
     }
     setConnectedDevice(null);
-    setStatus("disconnected");
+    setStatus('disconnected');
     setWatchData(null);
     setBattery(null);
   }, [connectedDevice]);
@@ -121,56 +120,38 @@ export function BleProvider({ children }: { children: ReactNode }) {
     }
     if (!connectedDevice) return null;
     try {
-      const { readWatchData } = await import("@/lib/bluetooth");
-      const { storage } = await import("@/lib/storage");
+      const { readWatchData } = await import('@/lib/bluetooth');
+      const { storage } = await import('@/lib/storage');
       const uuids = await storage.getBleUuids();
-      const data = await readWatchData(connectedDevice.id, uuids.serviceUuid, {
-        steps: uuids.stepsCharUuid,
-        calories: uuids.caloriesCharUuid,
-        distance: uuids.distanceCharUuid,
-        heartRate: uuids.heartRateCharUuid,
-        battery: uuids.batteryCharUuid,
-      });
+      const data = await readWatchData(connectedDevice.id, uuids);
       setWatchData(data);
       if (data.battery != null) setBattery(data.battery);
       return data;
-    } catch {
-      return null;
-    }
+    } catch { return null; }
   }, [connectedDevice]);
 
   const triggerFindPhone = useCallback(async () => {
-    Vibration.vibrate([0, 300, 200, 300, 200, 300]);
-    if (isMockMode()) return;
-    if (!connectedDevice) return;
+    Vibration.vibrate([0, 200, 100, 200]);
+    if (isMockMode() || !connectedDevice) return;
     try {
-      const { triggerFindPhone: find } = await import("@/lib/bluetooth");
-      const { storage } = await import("@/lib/storage");
+      const { triggerFindPhone: doFind } = await import('@/lib/bluetooth');
+      const { storage } = await import('@/lib/storage');
       const uuids = await storage.getBleUuids();
-      await find(connectedDevice.id, uuids.serviceUuid, uuids.findPhoneCharUuid);
-    } catch { }
+      await doFind(connectedDevice.id, uuids.serviceUuid, uuids.findPhoneCharUuid);
+    } catch {}
   }, [connectedDevice]);
 
   const value = useMemo(() => ({
-    status,
-    connectedDevice,
-    scannedDevices,
-    watchData,
-    battery,
-    isScanning,
-    startScan,
-    stopScan,
-    connectTo,
-    disconnect,
-    syncData,
-    triggerFindPhone,
-  }), [status, connectedDevice, scannedDevices, watchData, battery, isScanning, startScan, stopScan, connectTo, disconnect, syncData, triggerFindPhone]);
+    status, connectedDevice, scannedDevices, watchData, battery, isScanning,
+    startScan, stopScan, connectTo, disconnect, syncData, triggerFindPhone,
+  }), [status, connectedDevice, scannedDevices, watchData, battery, isScanning,
+    startScan, stopScan, connectTo, disconnect, syncData, triggerFindPhone]);
 
   return <BleContext.Provider value={value}>{children}</BleContext.Provider>;
 }
 
 export function useBle(): BleContextValue {
   const ctx = useContext(BleContext);
-  if (!ctx) throw new Error("useBle must be used within BleProvider");
+  if (!ctx) throw new Error('useBle must be used within BleProvider');
   return ctx;
 }
