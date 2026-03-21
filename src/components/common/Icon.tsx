@@ -13,15 +13,15 @@ const ICONS: Record<string, string> = {
   activity: "◉",
   shoe: "👟",
   watch: "⌚",
-  user: "👤",
-  settings: "⚙",
+  user: "🧑‍🚀",
+  settings: "🛠️",
   // Quick actions
   smartphone: "📱",
   camera: "📷",
-  "bar-chart-2": "📊",
+  "bar-chart-2": "📈",
   // Actions
-  "refresh-cw": "⟳",
-  "edit-2": "✎",
+  "refresh-cw": "🔄",
+  "edit-2": "✏️",
   heart: "♥",
   // Status
   check: "✓",
