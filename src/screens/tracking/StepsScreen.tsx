@@ -29,14 +29,11 @@ export const StepsScreen: React.FC = () => {
   const chartData = useMemo(() => {
     const count = chartRange === "week" ? 7 : 30;
     if (history.length === 0) {
-      // Demo data when no history
-      return chartRange === "week"
-        ? [3200, 5600, 8100, 4500, 9200, 7800, todaySteps || 6500]
-        : Array.from({ length: 30 }, () => Math.floor(Math.random() * 10000) + 2000);
+      return Array.from({ length: count }, () => 0);
     }
     const last = history.slice(-count);
     return last.map((r) => r.steps);
-  }, [history, chartRange, todaySteps]);
+  }, [history, chartRange]);
 
   const chartLabels = useMemo(() => {
     if (chartRange === "week") return DAYS_LABEL_7;
@@ -84,35 +81,39 @@ export const StepsScreen: React.FC = () => {
 
       {/* Daily Log */}
       <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-        <GlassCard glowColor={theme.colors.chartCyan} style={styles.logCard}>
+        <GlassCard style={styles.logCard}>
           <Text style={styles.sectionLabel}>RECENT LOG</Text>
-          {(history.length > 0 ? history.slice(-7).reverse() : demoLog()).map((record, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: array is static
-            <View key={i} style={styles.logRow}>
-              <Text style={styles.logDate}>{formatDate(record.date)}</Text>
-              <View style={styles.logBarContainer}>
-                <View
-                  style={[
-                    styles.logBar,
-                    {
-                      width: `${Math.min((record.steps / dailyStepGoal) * 100, 100)}%`,
-                      backgroundColor:
-                        record.steps >= dailyStepGoal
-                          ? theme.colors.success
-                          : theme.colors.chartCyan,
-                    },
-                  ]}
-                />
+          {history.length > 0 ? (
+            history.slice(-7).reverse().map((record, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: array is static
+              <View key={i} style={styles.logRow}>
+                <Text style={styles.logDate}>{formatDate(record.date)}</Text>
+                <View style={styles.logBarContainer}>
+                  <View
+                    style={[
+                      styles.logBar,
+                      {
+                        width: `${Math.min((record.steps / dailyStepGoal) * 100, 100)}%`,
+                        backgroundColor:
+                          record.steps >= dailyStepGoal
+                            ? theme.colors.success
+                            : theme.colors.chartCyan,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.logSteps}>{record.steps.toLocaleString()}</Text>
               </View>
-              <Text style={styles.logSteps}>{record.steps.toLocaleString()}</Text>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No data yet — sync your watch to see history</Text>
+          )}
         </GlassCard>
       </Animated.View>
 
       {/* Gamification / Badges */}
       <Animated.View entering={FadeInDown.delay(500).duration(400)}>
-        <GlassCard glowColor={theme.colors.primary} style={styles.badgesCard}>
+        <GlassCard style={styles.badgesCard}>
           <Text style={styles.sectionLabel}>MILESTONE BADGES</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgesScroll}>
             {badges.map((badge) => (
@@ -125,7 +126,7 @@ export const StepsScreen: React.FC = () => {
       {/* Goal Setter Modal */}
       <Modal visible={showGoalModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <GlassCard glowColor={theme.colors.primary} style={styles.modalCard}>
+          <GlassCard style={styles.modalCard}>
             <Text style={styles.modalTitle}>Set Daily Step Goal</Text>
             <View style={styles.goalPresets}>
               {goalPresets.map((preset) => (
@@ -177,12 +178,7 @@ export const StepsScreen: React.FC = () => {
   );
 };
 
-// Helpers
-function demoLog() {
-  const days = ["Today", "Yesterday", "2d ago", "3d ago", "4d ago", "5d ago", "6d ago"];
-  const steps = [6500, 8200, 3400, 11000, 7600, 9100, 5800];
-  return days.map((d, i) => ({ date: d, steps: steps[i], calories: 0, distanceKm: 0 }));
-}
+
 
 function formatDate(dateStr: string): string {
   if (!dateStr.includes("-")) return dateStr; // already formatted like "Today"
@@ -254,8 +250,8 @@ const styles = StyleSheet.create((theme) => ({
     marginBottom: theme.spacing.md,
   },
   logCard: {
-    marginTop: theme.spacing.xl,
-    marginBottom: theme.spacing.xl,
+    marginTop: theme.spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   logRow: {
     flexDirection: "row",
@@ -287,11 +283,17 @@ const styles = StyleSheet.create((theme) => ({
     fontWeight: "700",
   },
   badgesCard: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   badgesScroll: {
     flexDirection: "row",
     paddingVertical: theme.spacing.sm,
+  },
+  emptyText: {
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
+    textAlign: "center",
+    paddingVertical: theme.spacing.lg,
   },
   // Modal
   modalOverlay: {

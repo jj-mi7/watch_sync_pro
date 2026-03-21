@@ -13,9 +13,21 @@ import type { RootState } from "@/redux/store";
 import { NotificationService } from "@/services/notifications/NotificationService";
 import { calculateActiveMinutes, calculateCalories, calculateDistanceKm } from "@/utils/healthMath";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Platform, ScrollView, Text, View } from "react-native";
 import { BleManager, State as BleState } from "react-native-ble-plx";
-import Animated, { FadeInDown } from "react-native-reanimated";
+import Animated, {
+  FadeInDown,
+  useSharedValue,
+  useAnimatedStyle,
+  withRepeat,
+  withTiming,
+  withDelay,
+  withSequence,
+  withSpring,
+  Easing,
+  cancelAnimation,
+  interpolate,
+} from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
 
@@ -28,24 +40,71 @@ const FILE_DATA_DUMP = "26eb0024-b012-49a8-b1f8-394fb2032b0f";
 
 const bleManager = new BleManager();
 
+// ─── Pulse Ring Component ────────────────────────────────────────────────────
+const PulseRing: React.FC<{
+  delay: number;
+  color: string;
+  size: number;
+}> = ({ delay, color, size }) => {
+  const scale = useSharedValue(0.3);
+  const opacity = useSharedValue(0.6);
+
+  useEffect(() => {
+    scale.value = withDelay(
+      delay,
+      withRepeat(
+        withTiming(1.4, { duration: 2000, easing: Easing.out(Easing.ease) }),
+        -1,
+        false,
+      ),
+    );
+    opacity.value = withDelay(
+      delay,
+      withRepeat(
+        withTiming(0, { duration: 2000, easing: Easing.out(Easing.ease) }),
+        -1,
+        false,
+      ),
+    );
+  }, [delay, scale, opacity]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: scale.value }],
+    opacity: opacity.value,
+    position: "absolute" as const,
+    width: size,
+    height: size,
+    borderRadius: size / 2,
+    borderWidth: 2,
+    borderColor: color,
+  }));
+
+  return <Animated.View style={animatedStyle} />;
+};
+
 export const SyncScreen: React.FC = () => {
   const { theme } = useUnistyles();
   const dispatch = useDispatch();
-  const { connectionStatus, syncLogs } = useSelector((state: RootState) => state.device);
+  const { connectionStatus, syncLogs, device } = useSelector((state: RootState) => state.device);
   const user = useSelector((state: RootState) => state.user);
   const { badges } = useSelector((state: RootState) => state.health);
   const { dailyStepGoal } = useSelector((state: RootState) => state.settings);
   // biome-ignore lint/suspicious/noExplicitAny: BleDevice type not imported yet
   const [connectedDevice, setConnectedDevice] = useState<any>(null);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [hasError, setHasError] = useState(false);
 
   const sysSubRef = useRef<import("react-native-ble-plx").Subscription | null>(null);
   const fileCmdSubRef = useRef<import("react-native-ble-plx").Subscription | null>(null);
   const fileDataSubRef = useRef<import("react-native-ble-plx").Subscription | null>(null);
-  const scrollViewRef = useRef<ScrollView>(null);
   const fileBuffer = useRef("");
   const expectedFileBytes = useRef(0);
   const fileReceiveResolve = useRef<(() => void) | null>(null);
+
+  // Animation values
+  const successScale = useSharedValue(0);
+  const errorShake = useSharedValue(0);
+  const syncRotation = useSharedValue(0);
 
   useEffect(() => {
     return () => {
@@ -54,6 +113,58 @@ export const SyncScreen: React.FC = () => {
       fileDataSubRef.current?.remove();
     };
   }, []);
+
+  // Start/stop sync rotation animation
+  useEffect(() => {
+    if (connectionStatus === "syncing") {
+      syncRotation.value = withRepeat(
+        withTiming(360, { duration: 1500, easing: Easing.linear }),
+        -1,
+        false,
+      );
+    } else {
+      cancelAnimation(syncRotation);
+      syncRotation.value = withTiming(0, { duration: 300 });
+    }
+  }, [connectionStatus, syncRotation]);
+
+  // Success animation
+  useEffect(() => {
+    if (connectionStatus === "connected" && !isSyncing) {
+      successScale.value = withSequence(
+        withTiming(0, { duration: 0 }),
+        withSpring(1, { damping: 8, stiffness: 100 }),
+      );
+    }
+  }, [connectionStatus, isSyncing, successScale]);
+
+  // Error animation shake
+  useEffect(() => {
+    if (hasError) {
+      errorShake.value = withSequence(
+        withTiming(-10, { duration: 50 }),
+        withTiming(10, { duration: 50 }),
+        withTiming(-10, { duration: 50 }),
+        withTiming(10, { duration: 50 }),
+        withTiming(0, { duration: 50 }),
+      );
+      const timer = setTimeout(() => setHasError(false), 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasError, errorShake]);
+
+  const successAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: successScale.value }],
+    opacity: successScale.value,
+  }));
+
+  const errorAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ translateX: errorShake.value }],
+  }));
+
+  const syncAnimStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${syncRotation.value}deg` }],
+  }));
 
   const addLog = useCallback(
     (type: string, msg: string) => {
@@ -203,7 +314,6 @@ export const SyncScreen: React.FC = () => {
           `You are only ${stepsRemaining.toLocaleString()} steps away from your daily goal!`,
         );
       } else if (stepsRemaining <= 0 && displaySteps - finalSteps < dailyStepGoal) {
-        // Optionally notify if goal was reached just now
         NotificationService.displayGoalNotification(
           "Goal Reached! 🌟",
           `Congratulations! You've reached your daily goal of ${dailyStepGoal.toLocaleString()} steps.`,
@@ -254,25 +364,26 @@ export const SyncScreen: React.FC = () => {
 
   // biome-ignore lint/suspicious/noExplicitAny: BleDevice type not imported yet
   const syncSequence = async (overrideDevice?: any) => {
-    const device = overrideDevice || connectedDevice;
-    if (!device || isSyncing) return;
+    const dev = overrideDevice || connectedDevice;
+    if (!dev || isSyncing) return;
 
     setIsSyncing(true);
+    setHasError(false);
     dispatch(setConnectionStatus("syncing"));
     fileBuffer.current = "";
     expectedFileBytes.current = 0;
     addLog("SYS", "── COMMENCING DATA PULL ──");
 
     const sysCmd = async (h: string) => {
-      await sendToWatch(device, SYS_WRITE_NO_RESP, h, false);
+      await sendToWatch(dev, SYS_WRITE_NO_RESP, h, false);
       await delay(400);
     };
     const sysReq = async (h: string) => {
-      await sendToWatch(device, SYS_NOTIFY_AND_WRITE, h, true);
+      await sendToWatch(dev, SYS_NOTIFY_AND_WRITE, h, true);
       await delay(600);
     };
     const fileReq = async (h: string) => {
-      await sendToWatch(device, FILE_WRITE_AND_NOTIFY, h, true);
+      await sendToWatch(dev, FILE_WRITE_AND_NOTIFY, h, true);
       await delay(1000);
     };
 
@@ -306,6 +417,7 @@ export const SyncScreen: React.FC = () => {
     } catch (e: unknown) {
       addLog("ERR", `Sync aborted: ${e instanceof Error ? e.message : String(e)}`);
       dispatch(setConnectionStatus("connected"));
+      setHasError(true);
     } finally {
       setIsSyncing(false);
     }
@@ -314,34 +426,38 @@ export const SyncScreen: React.FC = () => {
   const startScan = async () => {
     dispatch(clearSyncLogs());
     dispatch(setConnectionStatus("scanning"));
+    setHasError(false);
     addLog("SYS", "Checking Bluetooth…");
 
     const state = await bleManager.state();
     if (state !== BleState.PoweredOn) {
       addLog("ERR", `Bluetooth is ${state}. Please enable it.`);
       dispatch(setConnectionStatus("disconnected"));
+      setHasError(true);
       return;
     }
 
     addLog("SYS", "Scanning…");
-    bleManager.startDeviceScan(null, { allowDuplicates: false }, async (error, device) => {
+    bleManager.startDeviceScan(null, { allowDuplicates: false }, async (error, scanDevice) => {
       if (error) {
         addLog("ERR", `Scan error: ${error.message}`);
+        setHasError(true);
+        dispatch(setConnectionStatus("disconnected"));
         return;
       }
-      if (device?.name?.includes("CASIO") || device?.id === "CF:76:44:C4:B8:14") {
+      if (scanDevice?.name?.includes("CASIO") || scanDevice?.id === "CF:76:44:C4:B8:14") {
         bleManager.stopDeviceScan();
         dispatch(setConnectionStatus("connecting"));
-        addLog("SYS", `Found: ${device.name || device.id}`);
+        addLog("SYS", `Found: ${scanDevice.name || scanDevice.id}`);
         try {
-          const connected = await device.connect();
+          const connected = await scanDevice.connect();
           await connected.discoverAllServicesAndCharacteristics();
           setConnectedDevice(connected);
           dispatch(setConnectionStatus("connected"));
           dispatch(
             setDevice({
-              id: device.id,
-              name: device.name || "CASIO ABL-100WE",
+              id: scanDevice.id,
+              name: scanDevice.name || "CASIO ABL-100WE",
               type: "casio",
               batteryLevel: 85,
             }),
@@ -377,101 +493,177 @@ export const SyncScreen: React.FC = () => {
         } catch (e: unknown) {
           addLog("ERR", `Connection failed: ${e instanceof Error ? e.message : String(e)}`);
           dispatch(setConnectionStatus("disconnected"));
+          setHasError(true);
         }
       }
     });
   };
 
-  const getLogColor = (type: string): string =>
-    ({
-      TX: "#0A84FF",
-      SYS_RX: "#32D74B",
-      FILE_TX: "#FF9F0A",
-      FILE_CMD: "#FFD60A",
-      FILE_DATA: "#BF5AF2",
-      PARSE: "#64D2FF",
-      STEPS: "#FF375F",
-      DAY_RECORD: "#30D158",
-      WARN: "#FF9F0A",
-      ERR: "#FF453A",
-    })[type] ?? "#8E8E93";
-
-  const copyLogs = () => {
-    if (!syncLogs.length) return;
-    const text = syncLogs.map((l) => `[${l.time}] ${l.type.padEnd(10)} ${l.msg}`).join("\n");
-    // Clipboard handled per-platform
-    if (Platform.OS === "android") {
-      Alert.alert("Copied", "Logs copied to clipboard.");
-    } else {
-      Alert.alert("Copied", "Logs copied to clipboard.");
+  const getStatusLabel = (): string => {
+    if (hasError) return "Connection Failed";
+    switch (connectionStatus) {
+      case "disconnected":
+        return "Not Connected";
+      case "scanning":
+        return "Scanning for Watch…";
+      case "connecting":
+        return "Connecting…";
+      case "connected":
+        return isSyncing ? "Syncing Data…" : "Connected";
+      case "syncing":
+        return "Syncing Data…";
+      default:
+        return "Not Connected";
     }
   };
+
+  const getStatusColor = (): string => {
+    if (hasError) return theme.colors.error;
+    switch (connectionStatus) {
+      case "connected":
+        return theme.colors.success;
+      case "syncing":
+        return theme.colors.info;
+      case "scanning":
+      case "connecting":
+        return theme.colors.warning;
+      default:
+        return theme.colors.textTertiary;
+    }
+  };
+
+  const isScanning = connectionStatus === "scanning" || connectionStatus === "connecting";
+  const isConnected = connectionStatus === "connected" || connectionStatus === "syncing";
 
   return (
     <ScreenWrapper scrollable={false} padded={true}>
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-        <View>
-          <Text style={styles.title}>BLE Sync</Text>
-          <Text style={styles.subtitle}>
-            {connectionStatus === "connected"
-              ? "LINKED: ABL-100WE"
-              : connectionStatus.toUpperCase()}
-          </Text>
-        </View>
+        <Text style={styles.title}>Watch</Text>
         <View
-          style={[
-            styles.statusDot,
-            {
-              backgroundColor:
-                connectionStatus === "connected" || connectionStatus === "syncing"
-                  ? theme.colors.success
-                  : theme.colors.error,
-            },
-          ]}
+          style={[styles.statusDot, { backgroundColor: getStatusColor() }]}
         />
       </Animated.View>
 
-      {/* Terminal */}
-      <View style={styles.terminalContainer}>
-        <View style={styles.terminalHeader}>
-          <Text style={styles.terminalTitle}>DUAL-CHANNEL STREAM</Text>
-          <View style={styles.terminalActions}>
-            <TouchableOpacity onPress={copyLogs} style={styles.terminalActionBtn}>
-              <Text style={styles.copyBtn}>COPY ALL</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => dispatch(clearSyncLogs())}
-              style={styles.terminalActionBtn}
-            >
-              <Text style={styles.clearBtn}>CLEAR</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-        <ScrollView
-          ref={scrollViewRef}
-          style={styles.terminalScroll}
-          onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
-        >
-          {syncLogs.map((log, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: logs don't have unique ids
-            <View key={i} style={styles.logRow}>
-              <Text style={styles.logTime}>[{log.time}]</Text>
-              <Text style={[styles.logType, { color: getLogColor(log.type) }]}>
-                {log.type.padEnd(10)}
-              </Text>
-              <Text style={styles.logMsg}>{log.msg}</Text>
+      {/* Central Status Area */}
+      <View style={styles.statusArea}>
+        {/* Scanning Animation */}
+        {isScanning && !hasError && (
+          <View style={styles.pulseContainer}>
+            <PulseRing delay={0} color={theme.colors.warning} size={180} />
+            <PulseRing delay={600} color={theme.colors.warning} size={180} />
+            <PulseRing delay={1200} color={theme.colors.warning} size={180} />
+            <View style={styles.centerIcon}>
+              <Text style={styles.centerEmoji}>⌚</Text>
             </View>
-          ))}
-        </ScrollView>
+          </View>
+        )}
+
+        {/* Connected State */}
+        {isConnected && !hasError && !isSyncing && (
+          <Animated.View style={[styles.successContainer, successAnimStyle]}>
+            <View style={[styles.successCircle, { borderColor: theme.colors.success }]}>
+              <Text style={styles.successCheck}>✓</Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Syncing Animation */}
+        {(connectionStatus === "syncing" || isSyncing) && !hasError && (
+          <View style={styles.syncContainer}>
+            <Animated.View style={[styles.syncRing, syncAnimStyle]}>
+              <View style={[styles.syncArc, { borderColor: theme.colors.info }]} />
+            </Animated.View>
+            <Text style={styles.centerEmoji}>⟳</Text>
+          </View>
+        )}
+
+        {/* Error State */}
+        {hasError && (
+          <Animated.View style={[styles.errorContainer, errorAnimStyle]}>
+            <View style={[styles.errorCircle, { borderColor: theme.colors.error }]}>
+              <Text style={styles.errorX}>✕</Text>
+            </View>
+          </Animated.View>
+        )}
+
+        {/* Disconnected / Idle */}
+        {connectionStatus === "disconnected" && !hasError && (
+          <View style={styles.idleContainer}>
+            <View style={[styles.idleCircle, { borderColor: theme.colors.surfaceBorder }]}>
+              <Text style={styles.idleEmoji}>⌚</Text>
+            </View>
+          </View>
+        )}
+
+        {/* Status Label */}
+        <Text style={[styles.statusLabel, { color: getStatusColor() }]}>
+          {getStatusLabel()}
+        </Text>
+        <Text style={styles.statusHint}>
+          {hasError
+            ? "Check Bluetooth is enabled and watch is nearby"
+            : connectionStatus === "disconnected"
+              ? "Tap below to scan & connect"
+              : isConnected && !isSyncing
+                ? device?.name || "CASIO ABL-100WE"
+                : ""}
+        </Text>
       </View>
 
-      <NeoButton
-        title={isSyncing ? "DOWNLOADING…" : connectedDevice ? "FORCE SYNC" : "SCAN & CONNECT"}
-        onPress={() => (connectedDevice ? syncSequence() : startScan())}
-        color={connectedDevice ? theme.colors.success : theme.colors.info}
-        disabled={isSyncing}
-        size="lg"
-      />
+      {/* Device Info (when connected) */}
+      {isConnected && device && (
+        <Animated.View entering={FadeInDown.duration(400)} style={styles.deviceInfo}>
+          <View style={styles.deviceInfoRow}>
+            <Text style={styles.deviceInfoLabel}>Device</Text>
+            <Text style={styles.deviceInfoValue}>{device.name}</Text>
+          </View>
+          <View style={styles.deviceInfoRow}>
+            <Text style={styles.deviceInfoLabel}>Battery</Text>
+            <Text style={styles.deviceInfoValue}>{device.batteryLevel}%</Text>
+          </View>
+          {device.lastSyncTime && (
+            <View style={styles.deviceInfoRow}>
+              <Text style={styles.deviceInfoLabel}>Last Sync</Text>
+              <Text style={styles.deviceInfoValue}>{device.lastSyncTime}</Text>
+            </View>
+          )}
+        </Animated.View>
+      )}
+
+      <View style={styles.bottomActions}>
+        <NeoButton
+          title={
+            isSyncing
+              ? "SYNCING…"
+              : connectedDevice
+                ? "SYNC NOW"
+                : hasError
+                  ? "RETRY"
+                  : isScanning
+                    ? "SCANNING…"
+                    : "SCAN & CONNECT"
+          }
+          onPress={() => {
+            if (hasError) {
+              setHasError(false);
+              startScan();
+            } else if (connectedDevice) {
+              syncSequence();
+            } else {
+              startScan();
+            }
+          }}
+          color={
+            hasError
+              ? theme.colors.error
+              : connectedDevice
+                ? theme.colors.success
+                : theme.colors.info
+          }
+          disabled={isSyncing || isScanning}
+          size="lg"
+        />
+      </View>
     </ScreenWrapper>
   );
 };
@@ -481,7 +673,7 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   title: {
     fontSize: theme.fontSize.xxl,
@@ -489,82 +681,154 @@ const styles = StyleSheet.create((theme) => ({
     letterSpacing: -1,
     color: theme.colors.textPrimary,
   },
-  subtitle: {
-    fontSize: theme.fontSize.caption,
-    color: theme.colors.textTertiary,
-    marginTop: 2,
-  },
   statusDot: {
     width: 12,
     height: 12,
     borderRadius: 6,
   },
-  terminalContainer: {
+  statusArea: {
     flex: 1,
-    backgroundColor: "#121214",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  // Pulse scanning
+  pulseContainer: {
+    width: 180,
+    height: 180,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  centerIcon: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.warning,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  centerEmoji: {
+    fontSize: 32,
+  },
+  // Connected success
+  successContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  successCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    backgroundColor: theme.colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  successCheck: {
+    fontSize: 48,
+    color: theme.colors.success,
+    fontWeight: "800",
+  },
+  // Syncing
+  syncContainer: {
+    width: 120,
+    height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  syncRing: {
+    position: "absolute",
+    width: 120,
+    height: 120,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  syncArc: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    borderTopColor: "transparent",
+    borderRightColor: "transparent",
+    borderBottomColor: "transparent",
+  },
+  // Error
+  errorContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 3,
+    backgroundColor: theme.colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorX: {
+    fontSize: 48,
+    color: theme.colors.error,
+    fontWeight: "800",
+  },
+  // Idle
+  idleContainer: {
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  idleCircle: {
+    width: 120,
+    height: 120,
+    borderRadius: 60,
+    borderWidth: 2,
+    borderStyle: "dashed",
+    backgroundColor: theme.colors.surface,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  idleEmoji: {
+    fontSize: 48,
+    opacity: 0.4,
+  },
+  // Labels
+  statusLabel: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    marginTop: theme.spacing.xl,
+  },
+  statusHint: {
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
+    marginTop: theme.spacing.xs,
+    textAlign: "center",
+  },
+  // Device Info
+  deviceInfo: {
+    backgroundColor: theme.colors.surface,
     borderRadius: theme.borderRadius.lg,
+    padding: theme.spacing.lg,
     borderWidth: 1,
     borderColor: theme.colors.surfaceLight,
-    overflow: "hidden",
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
-  terminalHeader: {
+  deviceInfoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: theme.colors.surface,
-    padding: theme.spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.surfaceLight,
+    paddingVertical: theme.spacing.xs,
   },
-  terminalTitle: {
-    fontSize: theme.fontSize.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontWeight: "600",
+  deviceInfoLabel: {
+    fontSize: theme.fontSize.caption,
     color: theme.colors.textTertiary,
   },
-  terminalActions: {
-    flexDirection: "row",
-    gap: 12,
+  deviceInfoValue: {
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textPrimary,
+    fontWeight: "700",
   },
-  terminalActionBtn: {
-    padding: 2,
-  },
-  copyBtn: {
-    fontSize: theme.fontSize.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontWeight: "600",
-    color: theme.colors.secondary,
-  },
-  clearBtn: {
-    fontSize: theme.fontSize.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontWeight: "600",
-    color: theme.colors.info,
-  },
-  terminalScroll: {
-    padding: theme.spacing.md,
-  },
-  logRow: {
-    flexDirection: "row",
-    marginBottom: 6,
-  },
-  logTime: {
-    fontFamily: "SpaceMono", // global generic if mono not loaded
-    color: theme.colors.textDisabled,
-    marginRight: 8,
-  },
-  logType: {
-    fontFamily: "SpaceMono",
-    width: 80,
-    fontWeight: "bold",
-  },
-  logMsg: {
-    fontFamily: "SpaceMono",
-    color: "#E5E5EA",
-    flex: 1,
-    flexWrap: "wrap",
+  bottomActions: {
+    paddingTop: theme.spacing.md,
+    paddingBottom: theme.spacing.md,
   },
 }));

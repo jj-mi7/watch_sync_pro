@@ -47,7 +47,7 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Profile */}
       <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-        <GlassCard glowColor={theme.colors.primary} style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.sectionLabel}>PROFILE</Text>
           <View style={styles.profileRow}>
             <View style={styles.avatar}>
@@ -63,7 +63,7 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Daily Goals */}
       <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-        <GlassCard glowColor={theme.colors.chartCyan} style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.sectionLabel}>DAILY GOALS</Text>
           <GoalRow
             label="Steps"
@@ -93,7 +93,7 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Preferences */}
       <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard glowColor={theme.colors.secondary} style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.sectionLabel}>PREFERENCES</Text>
           <View style={styles.prefRow}>
             <Text style={styles.prefLabel}>Unit System</Text>
@@ -118,7 +118,7 @@ export const SettingsScreen: React.FC = () => {
 
       {/* App Info */}
       <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-        <GlassCard glowColor={theme.colors.textTertiary} style={styles.card}>
+        <GlassCard style={styles.card}>
           <Text style={styles.sectionLabel}>APP</Text>
           <InfoRow label="Version" value="1.0.0" />
           <InfoRow label="Build" value="2026.03.21" />

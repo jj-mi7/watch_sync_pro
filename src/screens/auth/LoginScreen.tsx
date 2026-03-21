@@ -77,7 +77,7 @@ export const LoginScreen: React.FC = () => {
 
         {/* Login Card */}
         <Animated.View entering={FadeInDown.delay(300).duration(600)}>
-          <GlassCard glowColor={theme.colors.primary} style={styles.loginCard}>
+          <GlassCard style={styles.loginCard}>
             <Text style={styles.cardTitle}>Sign In</Text>
 
             <Input

@@ -67,7 +67,6 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
           borderColor,
           borderWidth: variant === "outline" ? 1.5 : 0,
           opacity: disabled ? 0.5 : 1,
-          shadowColor: variant === "filled" ? activeColor : "transparent",
         },
         animatedStyle,
         style,
@@ -90,10 +89,6 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: theme.borderRadius.round,
     justifyContent: "center",
     alignItems: "center",
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 12,
-    elevation: 6,
   },
   text: {
     fontWeight: "800",

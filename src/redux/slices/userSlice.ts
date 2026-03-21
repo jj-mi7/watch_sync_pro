@@ -36,6 +36,15 @@ const userSlice = createSlice({
       state.age = action.payload.age;
       state.gender = action.payload.gender;
     },
+    setHeight: (state, action: PayloadAction<number>) => {
+      state.heightCm = action.payload;
+    },
+    setWeight: (state, action: PayloadAction<number>) => {
+      state.weightKg = action.payload;
+    },
+    setGender: (state, action: PayloadAction<Gender>) => {
+      state.gender = action.payload;
+    },
     completeOnboarding: (state) => {
       state.onboardingComplete = true;
     },
@@ -43,5 +52,5 @@ const userSlice = createSlice({
   },
 });
 
-export const { setBiometrics, completeOnboarding, resetUser } = userSlice.actions;
+export const { setBiometrics, setHeight, setWeight, setGender, completeOnboarding, resetUser } = userSlice.actions;
 export default userSlice.reducer;

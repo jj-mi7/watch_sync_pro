@@ -28,14 +28,11 @@ export const ActiveScreen: React.FC = () => {
   const chartData = useMemo(() => {
     const count = chartRange === "week" ? 7 : 30;
     if (history.length === 0) {
-      // Demo data when no history
-      return chartRange === "week"
-        ? [15, 45, 30, 0, 60, 25, todayActiveMinutes || 20]
-        : Array.from({ length: 30 }, () => Math.floor(Math.random() * 90) + 10);
+      return Array.from({ length: count }, () => 0);
     }
     const last = history.slice(-count);
     return last.map((r) => r.activeMinutes || 0);
-  }, [history, chartRange, todayActiveMinutes]);
+  }, [history, chartRange]);
 
   const chartLabels = useMemo(() => {
     if (chartRange === "week") return DAYS_LABEL_7;
@@ -78,36 +75,40 @@ export const ActiveScreen: React.FC = () => {
 
       {/* Daily Log */}
       <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-        <GlassCard glowColor={theme.colors.info} style={styles.logCard}>
+        <GlassCard style={styles.logCard}>
           <Text style={styles.sectionLabel}>RECENT LOG</Text>
-          {(history.length > 0 ? history.slice(-7).reverse() : demoLog()).map((record, i) => (
-            // biome-ignore lint/suspicious/noArrayIndexKey: array is static
-            <View key={i} style={styles.logRow}>
-              <Text style={styles.logDate}>{formatDate(record.date)}</Text>
-              <View style={styles.logBarContainer}>
-                <View
-                  style={[
-                    styles.logBar,
-                    {
-                      width: `${Math.min(((record.activeMinutes || 0) / dailyActiveGoal) * 100, 100)}%`,
-                      backgroundColor:
-                        (record.activeMinutes || 0) >= dailyActiveGoal
-                          ? theme.colors.success
-                          : theme.colors.info,
-                    },
-                  ]}
-                />
+          {history.length > 0 ? (
+            history.slice(-7).reverse().map((record, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: array is static
+              <View key={i} style={styles.logRow}>
+                <Text style={styles.logDate}>{formatDate(record.date)}</Text>
+                <View style={styles.logBarContainer}>
+                  <View
+                    style={[
+                      styles.logBar,
+                      {
+                        width: `${Math.min(((record.activeMinutes || 0) / dailyActiveGoal) * 100, 100)}%`,
+                        backgroundColor:
+                          (record.activeMinutes || 0) >= dailyActiveGoal
+                            ? theme.colors.success
+                            : theme.colors.info,
+                      },
+                    ]}
+                  />
+                </View>
+                <Text style={styles.logSteps}>{record.activeMinutes || 0}m</Text>
               </View>
-              <Text style={styles.logSteps}>{record.activeMinutes || 0}m</Text>
-            </View>
-          ))}
+            ))
+          ) : (
+            <Text style={styles.emptyText}>No data yet — sync your watch to see history</Text>
+          )}
         </GlassCard>
       </Animated.View>
 
       {/* Goal Setter Modal */}
       <Modal visible={showGoalModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <GlassCard glowColor={theme.colors.info} style={styles.modalCard}>
+          <GlassCard style={styles.modalCard}>
             <Text style={styles.modalTitle}>Set Daily Active Goal</Text>
             <View style={styles.goalPresets}>
               {goalPresets.map((preset) => (
@@ -156,18 +157,7 @@ export const ActiveScreen: React.FC = () => {
   );
 };
 
-// Helpers
-function demoLog() {
-  const days = ["Today", "Yesterday", "2d ago", "3d ago", "4d ago", "5d ago", "6d ago"];
-  const mins = [20, 45, 10, 60, 30, 25, 15];
-  return days.map((d, i) => ({
-    date: d,
-    steps: 0,
-    calories: 0,
-    distanceKm: 0,
-    activeMinutes: mins[i],
-  }));
-}
+
 
 function formatDate(dateStr: string): string {
   if (!dateStr.includes("-")) return dateStr; // already formatted like "Today"
@@ -270,6 +260,12 @@ const styles = StyleSheet.create((theme) => ({
     width: 52,
     textAlign: "right",
     fontWeight: "700",
+  },
+  emptyText: {
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
+    textAlign: "center",
+    paddingVertical: theme.spacing.lg,
   },
   // Modal
   modalOverlay: {

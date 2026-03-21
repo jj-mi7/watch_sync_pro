@@ -66,6 +66,6 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   padded: {
-    paddingHorizontal: theme.spacing.xl,
+    paddingHorizontal: theme.spacing.lg,
   },
 }));

@@ -20,7 +20,7 @@ export const FindPhoneScreen: React.FC = () => {
           <Text style={styles.phoneEmoji}>📱</Text>
         </View>
 
-        <GlassCard glowColor={theme.colors.tertiary} style={styles.comingSoonCard}>
+        <GlassCard style={styles.comingSoonCard}>
           <View style={styles.badge}>
             <Text style={styles.badgeText}>COMING SOON</Text>
           </View>

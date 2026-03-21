@@ -1,6 +1,7 @@
 import { GlassCard } from "@/components/cards/GlassCard";
 import { StatCard } from "@/components/cards/StatCard";
 import { WatchCard } from "@/components/cards/WatchCard";
+// biome-ignore lint/style/noUnusedImports: needed for unused import cleanup pass later
 import { AnimatedRing } from "@/components/common/AnimatedRing";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import type { RootState } from "@/redux/store";
@@ -75,7 +76,7 @@ export const DashboardScreen: React.FC = () => {
 
       {/* Progress Rings */}
       <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-        <GlassCard glowColor={theme.colors.primary} style={styles.ringsCard}>
+        <GlassCard style={styles.ringsCard}>
           <Text style={styles.sectionLabel}>TODAY'S PROGRESS</Text>
           <View style={styles.ringsRow}>
             {/* Steps Ring */}
@@ -130,31 +131,12 @@ export const DashboardScreen: React.FC = () => {
           icon="🎯"
           color={theme.colors.chartCyan}
           index={0}
-          style={styles.statCardSpacing}
-        />
-        <View style={{ width: theme.spacing.md }} />
-        <StatCard
-          label="STREAK"
-          value="7d"
-          icon="🔥"
-          color={theme.colors.warning}
-          index={1}
-          style={styles.statCardSpacing}
-        />
-        <View style={{ width: theme.spacing.md }} />
-        <StatCard
-          label="RANK"
-          value="#3"
-          icon="⭐"
-          color={theme.colors.secondary}
-          index={2}
-          style={styles.statCardSpacing}
         />
       </Animated.View>
 
       {/* Quick Actions */}
       <Animated.View entering={FadeInDown.delay(600).duration(500)}>
-        <GlassCard glowColor={theme.colors.secondary} style={styles.actionsCard}>
+        <GlassCard style={styles.actionsCard}>
           <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
           <View style={styles.actionsRow}>
             <QuickAction
@@ -173,19 +155,6 @@ export const DashboardScreen: React.FC = () => {
               onPress={() => navigation.navigate("Settings")}
             />
             <QuickAction icon="📊" label="History" onPress={() => navigation.navigate("Steps")} />
-          </View>
-        </GlassCard>
-      </Animated.View>
-
-      {/* Quick Start Workouts */}
-      <Animated.View entering={FadeInDown.delay(700).duration(500)}>
-        <GlassCard glowColor={theme.colors.chartOrange} style={styles.actionsCard}>
-          <Text style={styles.sectionLabel}>QUICK START WORKOUT</Text>
-          <View style={styles.actionsRow}>
-            <QuickAction icon="🏃" label="Run" onPress={() => console.log("Start Run")} />
-            <QuickAction icon="🚶" label="Walk" onPress={() => console.log("Start Walk")} />
-            <QuickAction icon="🚴" label="Cycle" onPress={() => console.log("Start Cycle")} />
-            <QuickAction icon="🧘" label="Yoga" onPress={() => console.log("Start Yoga")} />
           </View>
         </GlassCard>
       </Animated.View>
@@ -250,7 +219,7 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   greeting: {
     fontSize: theme.fontSize.caption,
@@ -279,10 +248,10 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.primary,
   },
   watchCard: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   ringsCard: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   sectionLabel: {
     fontSize: theme.fontSize.xs,
@@ -315,11 +284,10 @@ const styles = StyleSheet.create((theme) => ({
   },
   statsRow: {
     flexDirection: "row",
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
-  statCardSpacing: {},
   actionsCard: {
-    marginBottom: theme.spacing.xl,
+    marginBottom: theme.spacing.lg,
   },
   actionsRow: {
     flexDirection: "row",

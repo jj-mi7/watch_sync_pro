@@ -64,7 +64,7 @@ export const WatchProfileScreen: React.FC = () => {
 
       {/* Photo Section */}
       <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-        <GlassCard glowColor={theme.colors.secondary} style={styles.photoCard}>
+        <GlassCard style={styles.photoCard}>
           <TouchableOpacity onPress={handlePickImage} activeOpacity={0.8}>
             <View style={styles.photoContainer}>
               {device?.photoUri ? (
@@ -91,7 +91,7 @@ export const WatchProfileScreen: React.FC = () => {
 
       {/* Device Info */}
       <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-        <GlassCard glowColor={theme.colors.primary} style={styles.infoCard}>
+        <GlassCard style={styles.infoCard}>
           <Text style={styles.sectionLabel}>DEVICE INFORMATION</Text>
 
           <InfoRow label="Model" value={device?.name || "CASIO ABL-100WE"} />
@@ -111,7 +111,7 @@ export const WatchProfileScreen: React.FC = () => {
 
       {/* Supported Devices */}
       <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard glowColor={theme.colors.chartGreen} style={styles.infoCard}>
+        <GlassCard style={styles.infoCard}>
           <Text style={styles.sectionLabel}>SUPPORTED DEVICES</Text>
           <Text style={styles.supportText}>Currently supported:</Text>
           <View style={styles.deviceList}>
