@@ -1,0 +1,383 @@
+import React, { useState, useEffect, useRef } from 'react';
+import {
+    View, Text, StyleSheet, TouchableOpacity, SafeAreaView,
+    ScrollView, Clipboard, ToastAndroid, Platform, Alert
+} from 'react-native';
+import { BleManager, State } from 'react-native-ble-plx';
+import { Buffer } from 'buffer';
+
+const manager = new BleManager();
+
+const SERVICE_UUID = '26eb000d-b012-49a8-b1f8-394fb2032b0f';
+const SYS_WRITE_NO_RESP = '26eb002c-b012-49a8-b1f8-394fb2032b0f';
+const SYS_NOTIFY_AND_WRITE = '26eb002d-b012-49a8-b1f8-394fb2032b0f';
+const FILE_WRITE_AND_NOTIFY = '26eb0023-b012-49a8-b1f8-394fb2032b0f';
+const FILE_DATA_DUMP = '26eb0024-b012-49a8-b1f8-394fb2032b0f';
+
+const CasioFinalScreen = () => {
+    const [connectedDevice, setConnectedDevice] = useState(null);
+    const [timeFormat, setTimeFormat] = useState('--');
+    const [steps, setSteps] = useState('0');
+    const [lastSync, setLastSync] = useState('--');
+    const [logs, setLogs] = useState([]);
+    const [isSyncing, setIsSyncing] = useState(false);
+
+    const sysSubRef = useRef(null);
+    const fileCmdSubRef = useRef(null);
+    const fileDataSubRef = useRef(null);
+    const scrollViewRef = useRef(null);
+
+    const fileBuffer = useRef('');
+    const expectedFileBytes = useRef(0);
+    const fileReceiveResolve = useRef(null);
+
+    const addLog = (type, msg) => {
+        const time = new Date().toLocaleTimeString('en-US', { hour12: false, fractionalSecondDigits: 2 });
+        setLogs(prev => [...prev.slice(-80), { time, type, msg }]);
+    };
+
+    useEffect(() => {
+        return () => {
+            sysSubRef.current?.remove();
+            fileCmdSubRef.current?.remove();
+            fileDataSubRef.current?.remove();
+        };
+    }, []);
+
+    const bcdByte = (hexStr) => {
+        const b = parseInt(hexStr, 16);
+        return ((b >> 4) * 10) + (b & 0x0F);
+    };
+
+    const parseSystemHex = (hex) => {
+        if (!hex) return;
+        const cmd = hex.substring(0, 2);
+        if (cmd !== '28' && cmd !== '11') addLog('SYS_RX', `[${cmd}] ${hex}`);
+        if (cmd === '11' && hex.length >= 22) {
+            setTimeFormat(hex.substring(20, 22) === '01' ? '24H' : '12H');
+        }
+    };
+
+    const parseFileCommandHex = (hex) => {
+        if (!hex) return;
+        const cmd = hex.substring(0, 2);
+        addLog('FILE_CMD', `[${cmd}] ${hex}`);
+        if (cmd === '00' && hex.length >= 8 && hex.substring(2, 4) === '11') {
+            const sizeLE = hex.substring(4, 8);
+            const size = parseInt(sizeLE[2] + sizeLE[3] + sizeLE[0] + sizeLE[1], 16);
+            expectedFileBytes.current = size;
+            addLog('FILE_CMD', `File ready: ${size} bytes expected`);
+        }
+    };
+
+    // ─── FILE DATA PARSER (16-BYTE STRUCT CRACKED) ─────────────────────────────
+    const parseFileDataHex = (hex) => {
+        if (!hex) return;
+
+        fileBuffer.current += hex;
+        const receivedBytes = fileBuffer.current.length / 2;
+        addLog('FILE_DATA', `+${hex.length / 2}B  (total ${receivedBytes}B / ${expectedFileBytes.current}B)`);
+        setSteps('BUFFERING...');
+
+        const gotAll = expectedFileBytes.current > 0
+            ? receivedBytes >= expectedFileBytes.current
+            : receivedBytes >= 12;
+        if (!gotAll) return;
+
+        const buf = fileBuffer.current;
+        if (buf.length < 12) { addLog('ERR', 'File data too short'); return; }
+
+        // 6-byte header represents the sync timestamp
+        const year = 2000 + bcdByte(buf.substring(0, 2));
+        const month = bcdByte(buf.substring(2, 4));
+        const day = bcdByte(buf.substring(4, 6));
+
+        addLog('PARSE', `Header Date: ${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+
+        // Skip the 6-byte (12 hex chars) header
+        const dataHex = buf.substring(12);
+
+        // Calculate total 16-byte (32 hex char) daily records.
+        // The loop inherently ignores the remaining 10-byte footer at the end!
+        const recordCount = Math.floor(dataHex.length / 32);
+
+        let finalSteps = 0;
+        let latestNonZero = 0;
+
+        for (let i = 0; i < recordCount; i++) {
+            const record = dataHex.substring(i * 32, i * 32 + 32);
+
+            // Step count is strictly the first 2 bytes (4 hex chars) of the struct in Little Endian
+            const stepsLE = record.substring(0, 4);
+            const steps = parseInt(stepsLE[2] + stepsLE[3] + stepsLE[0] + stepsLE[1], 16);
+
+            if (steps !== 0xFFFF && steps !== 0xFFFE) {
+                if (steps > 0) latestNonZero = steps;
+
+                // The last record in the circular buffer is Today's data
+                if (i === recordCount - 1) {
+                    finalSteps = steps;
+                }
+
+                if (steps > 0 || i === recordCount - 1) {
+                    addLog('DAY_RECORD', `Day -${recordCount - 1 - i}: ${steps.toLocaleString()} steps`);
+                }
+            }
+        }
+
+        // Display today's steps. Fallback to latestNonZero if you literally just woke up (0 steps today).
+        const displaySteps = finalSteps > 0 ? finalSteps : latestNonZero;
+
+        addLog('STEPS', `Parsed Today: ${finalSteps.toLocaleString()}  |  Display: ${displaySteps.toLocaleString()}`);
+        setSteps(displaySteps.toLocaleString());
+        setLastSync(new Date().toLocaleTimeString('en-US', { hour12: false }));
+
+        fileBuffer.current = '';
+        expectedFileBytes.current = 0;
+        if (fileReceiveResolve.current) {
+            fileReceiveResolve.current();
+            fileReceiveResolve.current = null;
+        }
+    };
+
+    const sendToWatch = async (targetDevice, characteristic, hex, withResponse) => {
+        if (!targetDevice) return;
+        try {
+            const b64 = Buffer.from(hex, 'hex').toString('base64');
+            if (withResponse) {
+                await targetDevice.writeCharacteristicWithResponseForService(SERVICE_UUID, characteristic, b64);
+            } else {
+                await targetDevice.writeCharacteristicWithoutResponseForService(SERVICE_UUID, characteristic, b64);
+            }
+            addLog(characteristic === FILE_WRITE_AND_NOTIFY ? 'FILE_TX' : 'TX', `→ ${hex}`);
+        } catch (e) {
+            addLog('ERR', `Write fail [${characteristic.substring(4, 8)}]: ${e.message}`);
+            throw e;
+        }
+    };
+
+    const delay = (ms) => new Promise(r => setTimeout(r, ms));
+
+    // ─── SYNC SEQUENCE ───────────────────────────────────────────────────────────
+    const syncSequence = async (overrideDevice) => {
+        // Allows us to auto-pull immediately without waiting for React state to batch
+        const device = overrideDevice || connectedDevice;
+        if (!device || isSyncing) return;
+
+        setIsSyncing(true);
+        fileBuffer.current = '';
+        expectedFileBytes.current = 0;
+        setSteps('AUTH...');
+        addLog('SYS', '── COMMENCING DATA PULL ──');
+
+        const sysCmd = async (h) => { await sendToWatch(device, SYS_WRITE_NO_RESP, h, false); await delay(400); };
+        const sysReq = async (h) => { await sendToWatch(device, SYS_NOTIFY_AND_WRITE, h, true); await delay(600); };
+        const fileReq = async (h) => { await sendToWatch(device, FILE_WRITE_AND_NOTIFY, h, true); await delay(1000); };
+
+        try {
+            await sysCmd('22');
+            await sysCmd('10');
+            await sysReq('23434153494f2041424c2d313030574500000000');
+            await sysCmd('26');
+
+            addLog('SYS', 'Requesting step file (type 0x11)…');
+            setSteps('DOWNLOADING...');
+
+            const dataReceived = new Promise(resolve => { fileReceiveResolve.current = resolve; });
+
+            let timeoutId;
+            const timeoutPromise = new Promise(resolve => {
+                timeoutId = setTimeout(() => {
+                    addLog('WARN', 'File transfer timeout – parsing what we have');
+                    resolve();
+                }, 8000);
+            });
+
+            await fileReq('0011000000');
+
+            await Promise.race([dataReceived, timeoutPromise]);
+            clearTimeout(timeoutId);
+
+            await fileReq('0411000000');
+            addLog('SYS', '── SYNC COMPLETE ──');
+        } catch (e) {
+            addLog('ERR', `Sync aborted: ${e.message}`);
+            setSteps('ERROR');
+        } finally {
+            setIsSyncing(false);
+        }
+    };
+
+    // ─── SCAN & CONNECT ──────────────────────────────────────────────────────────
+    const startScan = async () => {
+        setLogs([]);
+        addLog('SYS', 'Checking Bluetooth…');
+        const state = await manager.state();
+        if (state !== State.PoweredOn) { addLog('ERR', `Bluetooth is ${state}. Please enable it.`); return; }
+
+        addLog('SYS', 'Scanning…');
+        manager.startDeviceScan(null, { allowDuplicates: false }, async (error, device) => {
+            if (error) { addLog('ERR', `Scan error: ${error.message}`); return; }
+            if (device?.name?.includes('CASIO') || device?.id === 'CF:76:44:C4:B8:14') {
+                manager.stopDeviceScan();
+                addLog('SYS', `Found: ${device.name || device.id}`);
+                try {
+                    const connected = await device.connect();
+                    await connected.discoverAllServicesAndCharacteristics();
+                    setConnectedDevice(connected);
+                    addLog('SYS', 'GATT resolved – subscribing to channels…');
+
+                    sysSubRef.current = connected.monitorCharacteristicForService(
+                        SERVICE_UUID, SYS_NOTIFY_AND_WRITE,
+                        (err, char) => { if (char?.value) parseSystemHex(Buffer.from(char.value, 'base64').toString('hex')); }
+                    );
+                    fileCmdSubRef.current = connected.monitorCharacteristicForService(
+                        SERVICE_UUID, FILE_WRITE_AND_NOTIFY,
+                        (err, char) => { if (char?.value) parseFileCommandHex(Buffer.from(char.value, 'base64').toString('hex')); }
+                    );
+                    fileDataSubRef.current = connected.monitorCharacteristicForService(
+                        SERVICE_UUID, FILE_DATA_DUMP,
+                        (err, char) => { if (char?.value) parseFileDataHex(Buffer.from(char.value, 'base64').toString('hex')); }
+                    );
+
+                    await delay(1500);
+                    addLog('SYS', 'READY – Auto-pulling data...');
+                    // Trigger the pull instantly via the direct connection object
+                    syncSequence(connected);
+                } catch (e) {
+                    addLog('ERR', `Connection failed: ${e.message}`);
+                }
+            }
+        });
+    };
+
+    const getLogColor = (type) => ({
+        TX: '#0A84FF', SYS_RX: '#32D74B', FILE_TX: '#FF9F0A',
+        FILE_CMD: '#FFD60A', FILE_DATA: '#BF5AF2', PARSE: '#64D2FF',
+        STEPS: '#FF375F', DAY_RECORD: '#30D158', WARN: '#FF9F0A', ERR: '#FF453A',
+    }[type] ?? '#8E8E93');
+
+    const copyLogs = () => {
+        if (!logs.length) return;
+        Clipboard.setString(logs.map(l => `[${l.time}] ${l.type.padEnd(10)} ${l.msg}`).join('\n'));
+        if (Platform.OS === 'android') ToastAndroid.show('Logs copied!', ToastAndroid.SHORT);
+        else Alert.alert('Copied', 'Logs copied to clipboard.');
+    };
+
+    return (
+        <SafeAreaView style= { styles.container } >
+        <View style={ styles.header }>
+            <View>
+            <Text style={ styles.title }> CASIO DATA </Text>
+                < Text style = { styles.subtitle } >
+                    { connectedDevice? 'LINKED: ABL-100WE': 'STATUS: DISCONNECTED' }
+                    </Text>
+                    </View>
+                    < View style = { [styles.statusDot, { backgroundColor: connectedDevice ? '#32D74B' : '#FF453A' }]} />
+                        </View>
+
+                        < View style = { styles.dashboard } >
+                            <View style={ styles.heroCard }>
+                                <Text style={ styles.cardLabel }> DAILY STEPS </Text>
+                                    < Text style = { [styles.heroValue, { fontSize: (steps?.length ?? 0) > 6 ? 10 : 48, marginTop: 8 }]} >
+                                        { steps }
+                                        </Text>
+                                        </View>
+
+                                        < View style = { styles.statsRow } >
+                                            <View style={ styles.smallCard }>
+                                                <Text style={ styles.cardLabel }> LAST SYNC </Text>
+                                                    < Text style = { [styles.smallValue, { fontSize: 18 }]} > { lastSync } </Text>
+                                                        </View>
+                                                        < View style = { styles.smallCard } >
+                                                            <Text style={ styles.cardLabel }> FORMAT </Text>
+                                                                < Text style = { styles.smallValue } > { timeFormat } </Text>
+                                                                    </View>
+                                                                    </View>
+                                                                    </View>
+
+                                                                    < View style = { styles.terminalContainer } >
+                                                                        <View style={ styles.terminalHeader }>
+                                                                            <Text style={ styles.terminalTitle }> DUAL - CHANNEL STREAM </Text>
+                                                                                < View style = { styles.terminalActions } >
+                                                                                    <TouchableOpacity onPress={ copyLogs } style = { styles.terminalActionBtn } >
+                                                                                        <Text style={ styles.copyBtn }> COPY ALL </Text>
+                                                                                            </TouchableOpacity>
+                                                                                            < TouchableOpacity onPress = {() => setLogs([])} style = { styles.terminalActionBtn } >
+                                                                                                <Text style={ styles.clearBtn }> CLEAR </Text>
+                                                                                                    </TouchableOpacity>
+                                                                                                    </View>
+                                                                                                    </View>
+                                                                                                    < ScrollView
+ref = { scrollViewRef }
+style = { styles.terminalScroll }
+onContentSizeChange = {() => scrollViewRef.current?.scrollToEnd({ animated: true })}
+        >
+{
+    logs.map((log, i) => (
+        <View key= { i } style = { styles.logRow } >
+        <Text style={ styles.logTime } > [{ log.time }] </Text>
+    < Text style = { [styles.logType, { color: getLogColor(log.type) }]} >
+    { log.type.padEnd(10) }
+    </Text>
+    < Text style = { styles.logMsg } > { log.msg } </Text>
+    </View>
+    ))
+}
+    </ScrollView>
+    </View>
+
+    < TouchableOpacity
+style = {
+    [
+    styles.actionBtn,
+    connectedDevice ? styles.btnSync : styles.btnScan,
+    isSyncing && { opacity: 0.7 }
+    ]}
+onPress = {() => connectedDevice ? syncSequence() : startScan()}
+disabled = { isSyncing }
+    >
+    <Text style={ styles.btnText }>
+        { isSyncing? 'DOWNLOADING…': connectedDevice ? 'FORCE SYNC' : 'SCAN & CONNECT' }
+        </Text>
+        </TouchableOpacity>
+        </SafeAreaView>
+  );
+};
+
+const styles = StyleSheet.create({
+    container: { flex: 1, backgroundColor: '#09090B', padding: 20 },
+    header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 25, marginTop: 10 },
+    title: { color: '#FFF', fontSize: 28, fontWeight: '900', letterSpacing: 1 },
+    subtitle: { color: '#8E8E93', fontSize: 12, fontWeight: '600', marginTop: 4, letterSpacing: 0.5 },
+    statusDot: { width: 12, height: 12, borderRadius: 6 },
+
+    dashboard: { marginBottom: 20 },
+    heroCard: { backgroundColor: '#1C1C1E', borderRadius: 24, padding: 30, alignItems: 'center', marginBottom: 15, borderWidth: 1, borderColor: '#2C2C2E' },
+    heroValue: { color: '#FFF', fontWeight: '900', fontVariant: ['tabular-nums'], textAlign: 'center' },
+
+    statsRow: { flexDirection: 'row', justifyContent: 'space-between' },
+    smallCard: { backgroundColor: '#1C1C1E', width: '48%', borderRadius: 20, padding: 20, alignItems: 'center', borderWidth: 1, borderColor: '#2C2C2E' },
+    cardLabel: { color: '#8E8E93', fontSize: 11, fontWeight: '800', letterSpacing: 1 },
+    smallValue: { color: '#FFF', fontSize: 24, fontWeight: '800', marginTop: 8 },
+
+    terminalContainer: { flex: 1, backgroundColor: '#121214', borderRadius: 16, borderWidth: 1, borderColor: '#2C2C2E', overflow: 'hidden', marginBottom: 20 },
+    terminalHeader: { flexDirection: 'row', justifyContent: 'space-between', backgroundColor: '#1C1C1E', padding: 12, borderBottomWidth: 1, borderBottomColor: '#2C2C2E' },
+    terminalTitle: { color: '#8E8E93', fontSize: 10, fontWeight: 'bold', letterSpacing: 1 },
+    terminalActions: { flexDirection: 'row', gap: 12 },
+    terminalActionBtn: { padding: 2 },
+    copyBtn: { color: '#BF5AF2', fontSize: 10, fontWeight: 'bold' },
+    clearBtn: { color: '#0A84FF', fontSize: 10, fontWeight: 'bold' },
+    terminalScroll: { padding: 12 },
+    logRow: { flexDirection: 'row', marginBottom: 6 },
+    logTime: { color: '#636366', fontFamily: 'monospace', fontSize: 10, marginRight: 8 },
+    logType: { fontFamily: 'monospace', fontSize: 10, width: 80, fontWeight: 'bold' },
+    logMsg: { color: '#E5E5EA', fontFamily: 'monospace', fontSize: 10, flex: 1, flexWrap: 'wrap' },
+
+    actionBtn: { height: 60, borderRadius: 30, justifyContent: 'center', alignItems: 'center', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 8 },
+    btnScan: { backgroundColor: '#0A84FF', shadowColor: '#0A84FF' },
+    btnSync: { backgroundColor: '#32D74B', shadowColor: '#32D74B' },
+    btnText: { color: '#FFF', fontSize: 15, fontWeight: '900', letterSpacing: 1 },
+});
+
+export default CasioFinalScreen;
