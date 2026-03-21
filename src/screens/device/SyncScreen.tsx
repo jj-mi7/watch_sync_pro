@@ -108,10 +108,13 @@ export const SyncScreen: React.FC = () => {
   const syncRotation = useSharedValue(0);
 
   useEffect(() => {
-    // Reset stale connection state on mount (e.g. from persist across app restart)
+    // Reset stale connection state on mount or Auto-scan
     if (connectionStatus === "scanning" || connectionStatus === "connecting") {
       dispatch(setConnectionStatus("disconnected"));
+    } else if (connectionStatus === "disconnected") {
+      startScan();
     }
+    
     return () => {
       sysSubRef.current?.remove();
       fileCmdSubRef.current?.remove();

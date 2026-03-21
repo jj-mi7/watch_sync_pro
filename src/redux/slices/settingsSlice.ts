@@ -6,7 +6,6 @@ interface SettingsState {
   dailyCalorieGoal: number;
   dailyDistanceGoalKm: number;
   dailyActiveGoal: number;
-  units: "metric" | "imperial";
 }
 
 const initialState: SettingsState = {
@@ -14,7 +13,6 @@ const initialState: SettingsState = {
   dailyCalorieGoal: 400,
   dailyDistanceGoalKm: 7,
   dailyActiveGoal: 30,
-  units: "metric",
 };
 
 const settingsSlice = createSlice({
@@ -32,9 +30,6 @@ const settingsSlice = createSlice({
     },
     setDailyActiveGoal(state, action: PayloadAction<number>) {
       state.dailyActiveGoal = action.payload;
-    },
-    setUnits(state, action: PayloadAction<"metric" | "imperial">) {
-      state.units = action.payload;
     },
     /**
      * Set step goal and auto-compute calorie, distance, and active goals
@@ -70,7 +65,6 @@ export const {
   setDailyCalorieGoal,
   setDailyDistanceGoal,
   setDailyActiveGoal,
-  setUnits,
   setAllGoalsFromSteps,
   resetGoals,
 } = settingsSlice.actions;

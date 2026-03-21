@@ -27,6 +27,7 @@ const getBmiCategory = (bmi: number): { label: string; color: string } => {
 export const DashboardScreen: React.FC = () => {
   const { theme } = useUnistyles();
   const dispatch = useDispatch();
+  const authUser = useSelector((state: RootState) => state.auth.user);
   // biome-ignore lint/suspicious/noExplicitAny: Root stack param list not fully enforced yet
   const navigation = useNavigation<any>();
   const { device, connectionStatus } = useSelector((state: RootState) => state.device);
@@ -88,7 +89,9 @@ export const DashboardScreen: React.FC = () => {
       {/* Header */}
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
         <View>
-          <Text style={styles.greeting}>Good {getGreeting()}</Text>
+          <Text style={styles.greeting}>
+            Good {getGreeting()}{authUser?.displayName ? `, ${authUser.displayName.split(' ')[0]}` : ""}
+          </Text>
           <Text style={styles.title}>StrideSync</Text>
         </View>
         <TouchableOpacity
@@ -579,8 +582,9 @@ const styles = StyleSheet.create((theme) => ({
   },
   ringsRow: {
     flexDirection: "row",
-    justifyContent: "space-around",
+    justifyContent: "space-between",
     alignItems: "center",
+    gap: 8,
   },
   ringItem: {
     alignItems: "center",

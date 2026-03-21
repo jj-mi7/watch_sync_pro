@@ -109,19 +109,6 @@ export const WatchProfileScreen: React.FC = () => {
         </GlassCard>
       </Animated.View>
 
-      {/* Supported Devices */}
-      <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard style={styles.infoCard}>
-          <Text style={styles.sectionLabel}>SUPPORTED DEVICES</Text>
-          <Text style={styles.supportText}>Currently supported:</Text>
-          <View style={styles.deviceList}>
-            <DeviceTag name="CASIO ABL-100WE" active />
-            <DeviceTag name="Mi Band" />
-            <DeviceTag name="Fitbit" />
-            <DeviceTag name="Generic BLE" />
-          </View>
-        </GlassCard>
-      </Animated.View>
     </ScreenWrapper>
   );
 };
@@ -143,18 +130,8 @@ const InfoRow: React.FC<{ label: string; value: string; valueColor?: string }> =
   );
 };
 
-const DeviceTag: React.FC<{ name: string; active?: boolean }> = ({ name, active }) => {
-  const { theme } = useUnistyles();
-  const tagStyles = tagStylesDef(theme);
-  return (
-    <View style={tagStyles.tag}>
-      <Text style={tagStyles.text}>{name}</Text>
-      {!active && <Text style={tagStyles.soon}>SOON</Text>}
-    </View>
-  );
-};
 
-// biome-ignore lint/suspicious/noExplicitAny: generic theme
+
 const infoStylesDef = (theme: any) =>
   StyleSheet.create({
     row: {
@@ -172,48 +149,6 @@ const infoStylesDef = (theme: any) =>
       fontSize: theme.fontSize.caption,
       color: theme.colors.textPrimary,
       fontWeight: "700",
-    },
-  });
-
-// biome-ignore lint/suspicious/noExplicitAny: generic theme
-const tagStylesDef = (theme: any) =>
-  StyleSheet.create({
-    tag: {
-      flexDirection: "row",
-      alignItems: "center",
-      paddingHorizontal: theme.spacing.md,
-      paddingVertical: theme.spacing.sm,
-      borderRadius: theme.borderRadius.round,
-      backgroundColor: theme.colors.surfaceLight,
-      borderWidth: 1,
-      borderColor: theme.colors.surfaceBorder,
-      variants: {
-        active: {
-          true: {
-            borderColor: theme.colors.success,
-            backgroundColor: `${theme.colors.success}15`,
-          },
-        },
-      },
-    },
-    text: {
-      fontSize: theme.fontSize.caption,
-      color: theme.colors.textTertiary,
-      variants: {
-        active: {
-          true: {
-            color: theme.colors.success,
-          },
-        },
-      },
-    },
-    soon: {
-      fontSize: theme.fontSize.xs,
-      textTransform: "uppercase",
-      letterSpacing: 1,
-      fontWeight: "600",
-      color: theme.colors.textDisabled,
-      marginLeft: 6,
     },
   });
 

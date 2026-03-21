@@ -5,25 +5,25 @@ export const Colors = {
   surfaceLight: "#2C2C2E",
   surfaceBorder: "#3A3A3C",
 
-  // Primary accent — electric cyan
-  primary: "#00E5FF",
-  primaryDim: "#00B8D4",
-  primaryGlow: "rgba(0, 229, 255, 0.15)",
+  // Primary accent
+  primary: "#80DEEA",
+  primaryDim: "#4DD0E1",
+  primaryGlow: "rgba(128, 222, 234, 0.15)",
 
-  // Secondary accent — neon purple
-  secondary: "#BF5AF2",
-  secondaryDim: "#9945D4",
-  secondaryGlow: "rgba(191, 90, 242, 0.15)",
+  // Secondary accent
+  secondary: "#CE93D8",
+  secondaryDim: "#BA68C8",
+  secondaryGlow: "rgba(206, 147, 216, 0.15)",
 
-  // Tertiary — hot pink
-  tertiary: "#FF375F",
-  tertiaryGlow: "rgba(255, 55, 95, 0.15)",
+  // Tertiary
+  tertiary: "#F48FB1",
+  tertiaryGlow: "rgba(244, 143, 177, 0.15)",
 
   // Semantic
-  success: "#32D74B",
-  warning: "#FF9F0A",
-  error: "#FF453A",
-  info: "#0A84FF",
+  success: "#A5D6A7",
+  warning: "#FFCC80",
+  error: "#EF9A9A",
+  info: "#90CAF9",
 
   // Text
   textPrimary: "#FFFFFF",
@@ -32,12 +32,12 @@ export const Colors = {
   textDisabled: "#48484A",
 
   // Chart palette
-  chartCyan: "#00E5FF",
-  chartPurple: "#BF5AF2",
-  chartPink: "#FF375F",
-  chartGreen: "#32D74B",
-  chartOrange: "#FF9F0A",
-  chartBlue: "#0A84FF",
+  chartCyan: "#80DEEA",
+  chartPurple: "#CE93D8",
+  chartPink: "#F48FB1",
+  chartGreen: "#A5D6A7",
+  chartOrange: "#FFCC80",
+  chartBlue: "#90CAF9",
 
   // Gradients (start, end)
   gradientPrimary: ["#00E5FF", "#0A84FF"] as const,

@@ -24,16 +24,16 @@ export const DistanceScreen: React.FC = () => {
   const { todayDistanceKm, todaySteps, history } = useSelector(
     (state: RootState) => state.health,
   );
-  const { dailyDistanceGoalKm, units } = useSelector((state: RootState) => state.settings);
+  const { dailyDistanceGoalKm } = useSelector((state: RootState) => state.settings);
   const user = useSelector((state: RootState) => state.user);
   const [chartRange, setChartRange] = useState<"week" | "month">("week");
   const [showEditModal, setShowEditModal] = useState(false);
   const [tempHeight, setTempHeight] = useState(String(user.heightCm || 170));
   const [tempGender, setTempGender] = useState<Gender>(user.gender || "male");
 
-  const displayDistance = units === "imperial" ? todayDistanceKm * 0.621371 : todayDistanceKm;
-  const displayGoal = units === "imperial" ? dailyDistanceGoalKm * 0.621371 : dailyDistanceGoalKm;
-  const unitLabel = units === "imperial" ? "mi" : "km";
+  const displayDistance = todayDistanceKm;
+  const displayGoal = dailyDistanceGoalKm;
+  const unitLabel = "km";
 
   const progress = dailyDistanceGoalKm > 0 ? todayDistanceKm / dailyDistanceGoalKm : 0;
 
@@ -44,12 +44,8 @@ export const DistanceScreen: React.FC = () => {
     }
     return history
       .slice(-count)
-      .map((r) =>
-        units === "imperial"
-          ? Number.parseFloat((r.distanceKm * 0.621371).toFixed(1))
-          : r.distanceKm,
-      );
-  }, [history, chartRange, units]);
+      .map((r) => r.distanceKm);
+  }, [history, chartRange]);
 
   const chartLabels = useMemo(() => {
     if (chartRange === "week") return DAYS_LABEL_7;
