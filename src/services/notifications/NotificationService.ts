@@ -33,5 +33,8 @@ export const NotificationService = {
           },
         },
       });
+    } catch (e) {
+      console.warn("Notification error:", e);
+    }
   },
 };
