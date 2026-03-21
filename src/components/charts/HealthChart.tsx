@@ -140,7 +140,7 @@ export const HealthChart: React.FC<HealthChartProps> = ({
 
 const styles = StyleSheet.create((theme) => ({
   container: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.background,
     borderRadius: theme.borderRadius.xl,
     padding: theme.spacing.lg,
     borderWidth: 1,
