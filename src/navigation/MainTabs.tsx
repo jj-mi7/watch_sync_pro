@@ -7,12 +7,12 @@ import { ActiveScreen } from "@/screens/tracking/ActiveScreen";
 import { CaloriesScreen } from "@/screens/tracking/CaloriesScreen";
 import { DistanceScreen } from "@/screens/tracking/DistanceScreen";
 import { StepsScreen } from "@/screens/tracking/StepsScreen";
+import { Icon } from "@/components/common/Icon";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type React from "react";
 import { Text, View } from "react-native";
 import { moderateScale } from "react-native-size-matters";
-import Feather from "react-native-vector-icons/Feather";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 const Tab = createBottomTabNavigator();
@@ -43,9 +43,9 @@ const TabIcon: React.FC<{
   color: string;
 }> = ({ iconName, label, focused, color }) => (
   <View style={tabStyles.iconContainer}>
-    <Feather
+    <Icon
       name={iconName}
-      size={moderateScale(20)}
+      size={18}
       color={color}
       style={{ opacity: focused ? 1 : 0.4 }}
     />
@@ -54,6 +54,7 @@ const TabIcon: React.FC<{
         tabStyles.label,
         { color, opacity: focused ? 1 : 0.4 },
       ]}
+      numberOfLines={1}
     >
       {label}
     </Text>
@@ -66,9 +67,10 @@ const tabStyles = StyleSheet.create((theme) => ({
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 4,
+    width: moderateScale(60),
   },
   label: {
-    fontSize: moderateScale(10),
+    fontSize: moderateScale(9),
     fontWeight: "600",
     letterSpacing: 0.3,
     marginTop: 2,
@@ -133,7 +135,7 @@ export const MainTabs: React.FC = () => {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon iconName="settings" label="Settings" focused={focused} color={color} />
+            <TabIcon iconName="settings" label="More" focused={focused} color={color} />
           ),
         }}
       />

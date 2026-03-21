@@ -1,6 +1,6 @@
 export const Colors = {
   // Core backgrounds
-  background: "#09090B",
+  background: "#000000",
   surface: "#1C1C1E",
   surfaceLight: "#2C2C2E",
   surfaceBorder: "#3A3A3C",
@@ -47,7 +47,7 @@ export const Colors = {
   // Misc
   overlay: "rgba(0, 0, 0, 0.6)",
   divider: "#2C2C2E",
-  tabBarBg: "#121214",
+  tabBarBg: "#000000",
 } as const;
 
 export type ColorKey = keyof typeof Colors;

@@ -12,10 +12,17 @@ import type React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { Modal, Text, TouchableOpacity, View } from "react-native";
 import { moderateScale } from "react-native-size-matters";
-import Feather from "react-native-vector-icons/Feather";
+import { Icon } from "@/components/common/Icon";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
+
+const getBmiCategory = (bmi: number): { label: string; color: string } => {
+  if (bmi < 18.5) return { label: "Underweight", color: "#FF9F0A" };
+  if (bmi < 25) return { label: "Normal", color: "#32D74B" };
+  if (bmi < 30) return { label: "Overweight", color: "#FF9F0A" };
+  return { label: "Obese", color: "#FF453A" };
+};
 
 export const DashboardScreen: React.FC = () => {
   const { theme } = useUnistyles();
@@ -82,13 +89,13 @@ export const DashboardScreen: React.FC = () => {
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
         <View>
           <Text style={styles.greeting}>Good {getGreeting()}</Text>
-          <Text style={styles.title}>Dashboard</Text>
+          <Text style={styles.title}>StrideSync</Text>
         </View>
         <TouchableOpacity
           style={styles.syncBadge}
           onPress={() => navigation.navigate("Device", { screen: "Sync" })}
         >
-          <Feather name="refresh-cw" size={moderateScale(14)} color={theme.colors.primary} />
+          <Icon name="refresh-cw" size={14} color={theme.colors.primary} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -163,7 +170,7 @@ export const DashboardScreen: React.FC = () => {
                 <Text style={styles.goalLabel}>DAILY TARGET</Text>
                 <Text style={styles.goalValue}>{dailyStepGoal.toLocaleString()} steps</Text>
               </View>
-              <Feather name="edit-2" size={moderateScale(16)} color={theme.colors.textTertiary} />
+              <Icon name="edit-2" size={16} color={theme.colors.textTertiary} />
             </View>
             <View style={styles.goalStatsRow}>
               <GoalStat label="Calories" value={`${dailyCalorieGoal} cal`} />
@@ -172,6 +179,11 @@ export const DashboardScreen: React.FC = () => {
             </View>
           </GlassCard>
         </TouchableOpacity>
+      </Animated.View>
+
+      {/* BMI Card */}
+      <Animated.View entering={FadeInDown.delay(500).duration(500)}>
+        <BmiCard heightCm={user.heightCm} weightKg={user.weightKg} />
       </Animated.View>
 
       {/* Quick Actions */}
@@ -337,10 +349,83 @@ const QuickAction: React.FC<{ iconName: string; label: string; onPress: () => vo
   return (
     <TouchableOpacity style={qaStyles.action} onPress={onPress} activeOpacity={0.7}>
       <View style={qaStyles.iconWrap}>
-        <Feather name={iconName} size={moderateScale(18)} color={theme.colors.textSecondary} />
+        <Icon name={iconName} size={18} color={theme.colors.textSecondary} />
       </View>
       <Text style={qaStyles.label}>{label}</Text>
     </TouchableOpacity>
+  );
+};
+
+// ── BMI Card ──────────────────────────────────────────────────────────────────
+const BmiCard: React.FC<{ heightCm: number | null; weightKg: number | null }> = ({
+  heightCm,
+  weightKg,
+}) => {
+  const { theme } = useUnistyles();
+
+  if (!heightCm || !weightKg) {
+    return (
+      <GlassCard style={bmiStyles.card}>
+        <Text style={bmiStyles.label}>BMI</Text>
+        <Text style={bmiStyles.hint}>
+          Set your height and weight in Settings to see your BMI.
+        </Text>
+      </GlassCard>
+    );
+  }
+
+  const heightM = heightCm / 100;
+  const bmi = weightKg / (heightM * heightM);
+  const category = getBmiCategory(bmi);
+
+  // Target weight for normal BMI (18.5–24.9)
+  const normalMaxWeight = 24.9 * heightM * heightM;
+  const normalMinWeight = 18.5 * heightM * heightM;
+  let targetMsg = "";
+  if (bmi >= 25) {
+    const toLose = weightKg - normalMaxWeight;
+    targetMsg = `Lose ${toLose.toFixed(1)} kg to reach normal`;
+  } else if (bmi < 18.5) {
+    const toGain = normalMinWeight - weightKg;
+    targetMsg = `Gain ${toGain.toFixed(1)} kg to reach normal`;
+  }
+
+  return (
+    <GlassCard style={bmiStyles.card}>
+      <View style={bmiStyles.row}>
+        <View>
+          <Text style={bmiStyles.label}>BODY MASS INDEX</Text>
+          <View style={bmiStyles.valueRow}>
+            <Text style={[bmiStyles.value, { color: category.color }]}>{bmi.toFixed(1)}</Text>
+            <View style={[bmiStyles.badge, { backgroundColor: `${category.color}20` }]}>
+              <Text style={[bmiStyles.badgeText, { color: category.color }]}>
+                {category.label}
+              </Text>
+            </View>
+          </View>
+        </View>
+        <Icon name="heart" size={20} color={category.color} />
+      </View>
+      {targetMsg ? (
+        <Text style={bmiStyles.target}>{targetMsg}</Text>
+      ) : (
+        <Text style={[bmiStyles.target, { color: theme.colors.success }]}>
+          You're in a healthy range!
+        </Text>
+      )}
+      {/* BMI Scale Bar */}
+      <View style={bmiStyles.scaleBar}>
+        <View style={[bmiStyles.scaleSegment, { flex: 18.5, backgroundColor: "#FF9F0A30" }]} />
+        <View style={[bmiStyles.scaleSegment, { flex: 6.5, backgroundColor: "#32D74B30" }]} />
+        <View style={[bmiStyles.scaleSegment, { flex: 5, backgroundColor: "#FF9F0A30" }]} />
+        <View style={[bmiStyles.scaleSegment, { flex: 10, backgroundColor: "#FF453A30" }]} />
+      </View>
+      <View style={bmiStyles.scaleLabels}>
+        <Text style={bmiStyles.scaleText}>18.5</Text>
+        <Text style={bmiStyles.scaleText}>25</Text>
+        <Text style={bmiStyles.scaleText}>30</Text>
+      </View>
+    </GlassCard>
   );
 };
 
@@ -367,6 +452,76 @@ const qaStyles = StyleSheet.create((theme) => ({
   },
 }));
 
+const bmiStyles = StyleSheet.create((theme) => ({
+  card: {
+    marginBottom: theme.spacing.lg,
+  },
+  label: {
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  hint: {
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
+    lineHeight: 18,
+  },
+  row: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: theme.spacing.sm,
+  },
+  valueRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: theme.spacing.sm,
+  },
+  value: {
+    fontSize: theme.fontSize.xxl,
+    fontWeight: "800",
+    letterSpacing: -1,
+  },
+  badge: {
+    paddingHorizontal: theme.spacing.sm,
+    paddingVertical: 3,
+    borderRadius: theme.borderRadius.round,
+  },
+  badgeText: {
+    fontSize: theme.fontSize.xs,
+    fontWeight: "700",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+  },
+  target: {
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
+    marginBottom: theme.spacing.md,
+  },
+  scaleBar: {
+    flexDirection: "row",
+    height: 6,
+    borderRadius: 3,
+    overflow: "hidden",
+    marginBottom: 4,
+  },
+  scaleSegment: {
+    height: "100%",
+  },
+  scaleLabels: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    paddingHorizontal: "20%",
+  },
+  scaleText: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textTertiary,
+  },
+}));
+
 // Helpers
 function getGreeting(): string {
   const h = new Date().getHours();
@@ -389,7 +544,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   greeting: {
     fontSize: theme.fontSize.caption,
-    color: theme.colors.textTertiary,
+    color: theme.colors.textSecondary,
     marginBottom: 2,
   },
   title: {
@@ -429,6 +584,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   ringItem: {
     alignItems: "center",
+    flex: 1,
   },
   ringValue: {
     fontSize: theme.fontSize.md,
