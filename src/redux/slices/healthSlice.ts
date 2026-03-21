@@ -44,7 +44,7 @@ const healthSlice = createSlice({
     ) {
       const { steps, heightCm, weightKg, gender } = action.payload;
       state.todaySteps = steps;
-      state.todayCalories = calculateCalories(steps, weightKg);
+      state.todayCalories = calculateCalories(steps, weightKg, heightCm, gender);
       state.todayDistanceKm = calculateDistanceKm(steps, heightCm, gender);
       state.todayActiveMinutes = calculateActiveMinutes(steps);
     },

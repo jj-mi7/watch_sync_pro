@@ -1,21 +1,25 @@
 import { GlassCard } from "@/components/cards/GlassCard";
-import { StatCard } from "@/components/cards/StatCard";
 import { WatchCard } from "@/components/cards/WatchCard";
-// biome-ignore lint/style/noUnusedImports: needed for unused import cleanup pass later
 import { AnimatedRing } from "@/components/common/AnimatedRing";
+import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
+import { setAllGoalsFromSteps } from "@/redux/slices/settingsSlice";
 import type { RootState } from "@/redux/store";
 import { NotificationService } from "@/services/notifications/NotificationService";
+import { calculateStepStats } from "@/utils/healthMath";
 import { useNavigation } from "@react-navigation/native";
 import type React from "react";
-import { useEffect, useMemo } from "react";
-import { Text, TouchableOpacity, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
+import { moderateScale } from "react-native-size-matters";
+import Feather from "react-native-vector-icons/Feather";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 
 export const DashboardScreen: React.FC = () => {
   const { theme } = useUnistyles();
+  const dispatch = useDispatch();
   // biome-ignore lint/suspicious/noExplicitAny: Root stack param list not fully enforced yet
   const navigation = useNavigation<any>();
   const { device, connectionStatus } = useSelector((state: RootState) => state.device);
@@ -25,6 +29,10 @@ export const DashboardScreen: React.FC = () => {
   const { dailyStepGoal, dailyCalorieGoal, dailyDistanceGoalKm, dailyActiveGoal } = useSelector(
     (state: RootState) => state.settings,
   );
+  const user = useSelector((state: RootState) => state.user);
+
+  const [showGoalModal, setShowGoalModal] = useState(false);
+  const [tempGoal, setTempGoal] = useState(dailyStepGoal);
 
   const stepProgress = useMemo(
     () => (dailyStepGoal > 0 ? todaySteps / dailyStepGoal : 0),
@@ -47,6 +55,27 @@ export const DashboardScreen: React.FC = () => {
     NotificationService.requestPermissions();
   }, []);
 
+  // Preview stats for the goal modal
+  const previewStats = useMemo(() => {
+    const h = user.heightCm || 170;
+    const w = user.weightKg || 70;
+    return calculateStepStats(tempGoal, h, w, user.gender !== "female");
+  }, [tempGoal, user]);
+
+  const handleSaveGoal = () => {
+    dispatch(
+      setAllGoalsFromSteps({
+        steps: tempGoal,
+        heightCm: user.heightCm || 170,
+        weightKg: user.weightKg || 70,
+        isMale: user.gender !== "female",
+      }),
+    );
+    setShowGoalModal(false);
+  };
+
+  const goalPresets = [5000, 8000, 10000, 12000, 15000];
+
   return (
     <ScreenWrapper>
       {/* Header */}
@@ -59,7 +88,7 @@ export const DashboardScreen: React.FC = () => {
           style={styles.syncBadge}
           onPress={() => navigation.navigate("Device", { screen: "Sync" })}
         >
-          <Text style={styles.syncBadgeText}>⟳ SYNC</Text>
+          <Feather name="refresh-cw" size={moderateScale(14)} color={theme.colors.primary} />
         </TouchableOpacity>
       </Animated.View>
 
@@ -79,7 +108,6 @@ export const DashboardScreen: React.FC = () => {
         <GlassCard style={styles.ringsCard}>
           <Text style={styles.sectionLabel}>TODAY'S PROGRESS</Text>
           <View style={styles.ringsRow}>
-            {/* Steps Ring */}
             <TouchableOpacity style={styles.ringItem} onPress={() => navigation.navigate("Steps")}>
               <AnimatedRing progress={stepProgress} size={75} color={theme.colors.chartCyan}>
                 <Text style={styles.ringValue}>{formatNumber(todaySteps)}</Text>
@@ -87,7 +115,6 @@ export const DashboardScreen: React.FC = () => {
               </AnimatedRing>
             </TouchableOpacity>
 
-            {/* Calories Ring */}
             <TouchableOpacity
               style={styles.ringItem}
               onPress={() => navigation.navigate("Steps", { screen: "Calories" })}
@@ -98,7 +125,6 @@ export const DashboardScreen: React.FC = () => {
               </AnimatedRing>
             </TouchableOpacity>
 
-            {/* Distance Ring */}
             <TouchableOpacity
               style={styles.ringItem}
               onPress={() => navigation.navigate("Steps", { screen: "Distance" })}
@@ -109,7 +135,6 @@ export const DashboardScreen: React.FC = () => {
               </AnimatedRing>
             </TouchableOpacity>
 
-            {/* Active Mins Ring */}
             <TouchableOpacity
               style={styles.ringItem}
               onPress={() => navigation.navigate("Steps", { screen: "Active" })}
@@ -123,15 +148,30 @@ export const DashboardScreen: React.FC = () => {
         </GlassCard>
       </Animated.View>
 
-      {/* Quick Stats */}
-      <Animated.View entering={FadeInDown.delay(400).duration(500)} style={styles.statsRow}>
-        <StatCard
-          label="STEP GOAL"
-          value={formatNumber(dailyStepGoal)}
-          icon="🎯"
-          color={theme.colors.chartCyan}
-          index={0}
-        />
+      {/* Step Goal Card — Tappable */}
+      <Animated.View entering={FadeInDown.delay(400).duration(500)}>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => {
+            setTempGoal(dailyStepGoal);
+            setShowGoalModal(true);
+          }}
+        >
+          <GlassCard style={styles.goalCard}>
+            <View style={styles.goalCardRow}>
+              <View>
+                <Text style={styles.goalLabel}>DAILY TARGET</Text>
+                <Text style={styles.goalValue}>{dailyStepGoal.toLocaleString()} steps</Text>
+              </View>
+              <Feather name="edit-2" size={moderateScale(16)} color={theme.colors.textTertiary} />
+            </View>
+            <View style={styles.goalStatsRow}>
+              <GoalStat label="Calories" value={`${dailyCalorieGoal} cal`} />
+              <GoalStat label="Distance" value={`${dailyDistanceGoalKm} km`} />
+              <GoalStat label="Active" value={`${dailyActiveGoal} min`} />
+            </View>
+          </GlassCard>
+        </TouchableOpacity>
       </Animated.View>
 
       {/* Quick Actions */}
@@ -140,40 +180,169 @@ export const DashboardScreen: React.FC = () => {
           <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
           <View style={styles.actionsRow}>
             <QuickAction
-              icon="📱"
+              iconName="smartphone"
               label="Find Phone"
               onPress={() => navigation.navigate("Device", { screen: "FindPhone" })}
             />
             <QuickAction
-              icon="📸"
+              iconName="camera"
               label="Watch Photo"
               onPress={() => navigation.navigate("Device", { screen: "WatchProfile" })}
             />
             <QuickAction
-              icon="⚙️"
+              iconName="settings"
               label="Settings"
               onPress={() => navigation.navigate("Settings")}
             />
-            <QuickAction icon="📊" label="History" onPress={() => navigation.navigate("Steps")} />
+            <QuickAction
+              iconName="bar-chart-2"
+              label="History"
+              onPress={() => navigation.navigate("Steps")}
+            />
           </View>
         </GlassCard>
       </Animated.View>
+
+      {/* Goal Editor Modal */}
+      <Modal visible={showGoalModal} transparent animationType="fade">
+        <View style={styles.modalOverlay}>
+          <GlassCard style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Set Daily Step Goal</Text>
+            <View style={styles.goalPresets}>
+              {goalPresets.map((preset) => (
+                <TouchableOpacity
+                  key={preset}
+                  style={[
+                    styles.presetBtn,
+                    tempGoal === preset && {
+                      backgroundColor: `${theme.colors.primary}20`,
+                      borderColor: theme.colors.primary,
+                    },
+                  ]}
+                  onPress={() => setTempGoal(preset)}
+                >
+                  <Text
+                    style={[
+                      styles.presetText,
+                      tempGoal === preset && { color: theme.colors.primary },
+                    ]}
+                  >
+                    {(preset / 1000).toFixed(0)}k
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            {/* Auto-computed preview */}
+            <View style={styles.previewCard}>
+              <Text style={styles.previewTitle}>AUTO-CALCULATED GOALS</Text>
+              <View style={styles.previewRow}>
+                <PreviewItem label="Calories" value={`${previewStats.caloriesBurned}`} unit="cal" />
+                <PreviewItem label="Distance" value={`${previewStats.distanceKm}`} unit="km" />
+                <PreviewItem label="Weight" value={`${previewStats.weightLostKg}`} unit="kg lost" />
+              </View>
+            </View>
+
+            <NeoButton
+              title="SAVE"
+              onPress={handleSaveGoal}
+              color={theme.colors.primary}
+              size="md"
+              style={{ marginTop: theme.spacing.sm }}
+            />
+            <NeoButton
+              title="CANCEL"
+              onPress={() => setShowGoalModal(false)}
+              variant="ghost"
+              color={theme.colors.textTertiary}
+              size="sm"
+              style={{ marginTop: theme.spacing.sm }}
+            />
+          </GlassCard>
+        </View>
+      </Modal>
     </ScreenWrapper>
   );
 };
 
-const QuickAction: React.FC<{ icon: string; label: string; onPress: () => void }> = ({
-  icon,
+// ── Sub-components ────────────────────────────────────────────────────────────
+
+const GoalStat: React.FC<{ label: string; value: string }> = ({ label, value }) => (
+  <View style={goalStatStyles.container}>
+    <Text style={goalStatStyles.value}>{value}</Text>
+    <Text style={goalStatStyles.label}>{label}</Text>
+  </View>
+);
+
+const goalStatStyles = StyleSheet.create((theme) => ({
+  container: {
+    alignItems: "center",
+    flex: 1,
+  },
+  value: {
+    fontSize: theme.fontSize.caption,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+  },
+  label: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textTertiary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 2,
+  },
+}));
+
+const PreviewItem: React.FC<{ label: string; value: string; unit: string }> = ({
+  label,
+  value,
+  unit,
+}) => (
+  <View style={previewStyles.item}>
+    <Text style={previewStyles.value}>{value}</Text>
+    <Text style={previewStyles.unit}>{unit}</Text>
+    <Text style={previewStyles.label}>{label}</Text>
+  </View>
+);
+
+const previewStyles = StyleSheet.create((theme) => ({
+  item: {
+    alignItems: "center",
+    flex: 1,
+  },
+  value: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: "700",
+    color: theme.colors.primary,
+  },
+  unit: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textTertiary,
+  },
+  label: {
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textSecondary,
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
+    marginTop: 4,
+  },
+}));
+
+const QuickAction: React.FC<{ iconName: string; label: string; onPress: () => void }> = ({
+  iconName,
   label,
   onPress,
-}) => (
-  <TouchableOpacity style={qaStyles.action} onPress={onPress} activeOpacity={0.7}>
-    <View style={qaStyles.iconWrap}>
-      <Text style={qaStyles.icon}>{icon}</Text>
-    </View>
-    <Text style={qaStyles.label}>{label}</Text>
-  </TouchableOpacity>
-);
+}) => {
+  const { theme } = useUnistyles();
+  return (
+    <TouchableOpacity style={qaStyles.action} onPress={onPress} activeOpacity={0.7}>
+      <View style={qaStyles.iconWrap}>
+        <Feather name={iconName} size={moderateScale(18)} color={theme.colors.textSecondary} />
+      </View>
+      <Text style={qaStyles.label}>{label}</Text>
+    </TouchableOpacity>
+  );
+};
 
 const qaStyles = StyleSheet.create((theme) => ({
   action: {
@@ -181,21 +350,18 @@ const qaStyles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   iconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 14,
+    width: moderateScale(40),
+    height: moderateScale(40),
+    borderRadius: moderateScale(12),
     backgroundColor: theme.colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 6,
   },
-  icon: {
-    fontSize: 20,
-  },
   label: {
     fontSize: theme.fontSize.xs,
     textTransform: "uppercase",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
     fontWeight: "600",
     color: theme.colors.textSecondary,
   },
@@ -234,18 +400,13 @@ const styles = StyleSheet.create((theme) => ({
   },
   syncBadge: {
     backgroundColor: theme.colors.primaryGlow,
-    paddingHorizontal: theme.spacing.md,
-    paddingVertical: theme.spacing.sm,
-    borderRadius: theme.borderRadius.round,
+    width: moderateScale(36),
+    height: moderateScale(36),
+    borderRadius: moderateScale(18),
+    justifyContent: "center",
+    alignItems: "center",
     borderWidth: 1,
-    borderColor: `${theme.colors.primary}40`,
-  },
-  syncBadgeText: {
-    fontSize: theme.fontSize.xs,
-    textTransform: "uppercase",
-    letterSpacing: 1,
-    fontWeight: "600",
-    color: theme.colors.primary,
+    borderColor: `${theme.colors.primary}20`,
   },
   watchCard: {
     marginBottom: theme.spacing.lg,
@@ -282,14 +443,94 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.textTertiary,
     marginTop: -2,
   },
-  statsRow: {
-    flexDirection: "row",
+  // Goal card
+  goalCard: {
     marginBottom: theme.spacing.lg,
+  },
+  goalCardRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: theme.spacing.md,
+  },
+  goalLabel: {
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: 4,
+  },
+  goalValue: {
+    fontSize: theme.fontSize.lg,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
+  },
+  goalStatsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.surfaceLight,
+    paddingTop: theme.spacing.md,
   },
   actionsCard: {
     marginBottom: theme.spacing.lg,
   },
   actionsRow: {
+    flexDirection: "row",
+    justifyContent: "space-around",
+  },
+  // Modal
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: theme.colors.overlay,
+    justifyContent: "center",
+    paddingHorizontal: theme.spacing.xxl,
+  },
+  modalCard: {},
+  modalTitle: {
+    fontSize: theme.fontSize.xl,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.lg,
+    textAlign: "center",
+  },
+  goalPresets: {
+    flexDirection: "row",
+    justifyContent: "center",
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
+  },
+  presetBtn: {
+    paddingVertical: theme.spacing.sm,
+    paddingHorizontal: theme.spacing.md,
+    borderRadius: theme.borderRadius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.surfaceBorder,
+    backgroundColor: theme.colors.surfaceLight,
+  },
+  presetText: {
+    fontSize: theme.fontSize.caption,
+    fontWeight: "700",
+    color: theme.colors.textSecondary,
+  },
+  previewCard: {
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
+  },
+  previewTitle: {
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textTertiary,
+    marginBottom: theme.spacing.md,
+    textAlign: "center",
+  },
+  previewRow: {
     flexDirection: "row",
     justifyContent: "space-around",
   },

@@ -109,32 +109,32 @@ export const CaloriesScreen: React.FC = () => {
             </TouchableOpacity>
           </View>
           <Text style={styles.infoText}>
-            Calories are estimated using the MET (Metabolic Equivalent of Task) formula for walking
-            activity.
+            Calories are estimated from your step count using your stride length and body weight.
+            Walking burns approximately 0.75 kcal per kg per km.
           </Text>
           <View style={styles.formulaCard}>
             <Text style={styles.formulaTitle}>Formula</Text>
             <Text style={styles.formulaText}>
-              Cal/min = (MET × 3.5 × Weight) / 200
+              Distance = Steps × Stride Length
             </Text>
             <Text style={styles.formulaText}>
-              Total = Cal/min × (Steps / 100)
+              Cal = Distance(km) × Weight(kg) × 0.75
             </Text>
           </View>
           <View style={styles.paramRow}>
             <View style={styles.paramItem}>
-              <Text style={styles.paramLabel}>MET Value</Text>
-              <Text style={styles.paramValue}>3.5</Text>
-            </View>
-            <View style={styles.paramItem}>
-              <Text style={styles.paramLabel}>Your Weight</Text>
+              <Text style={styles.paramLabel}>Weight</Text>
               <Text style={[styles.paramValue, { color: theme.colors.chartPurple }]}>
                 {currentWeight} kg
               </Text>
             </View>
             <View style={styles.paramItem}>
-              <Text style={styles.paramLabel}>Cal/min</Text>
-              <Text style={styles.paramValue}>{calPerMin}</Text>
+              <Text style={styles.paramLabel}>Factor</Text>
+              <Text style={styles.paramValue}>0.75</Text>
+            </View>
+            <View style={styles.paramItem}>
+              <Text style={styles.paramLabel}>kg/cal</Text>
+              <Text style={styles.paramValue}>7700</Text>
             </View>
           </View>
         </GlassCard>

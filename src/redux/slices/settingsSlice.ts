@@ -1,3 +1,4 @@
+import { calculateStepStats } from "@/utils/healthMath";
 import { type PayloadAction, createSlice } from "@reduxjs/toolkit";
 
 interface SettingsState {
@@ -35,6 +36,26 @@ const settingsSlice = createSlice({
     setUnits(state, action: PayloadAction<"metric" | "imperial">) {
       state.units = action.payload;
     },
+    /**
+     * Set step goal and auto-compute calorie, distance, and active goals
+     * using user's biometrics.
+     */
+    setAllGoalsFromSteps(
+      state,
+      action: PayloadAction<{
+        steps: number;
+        heightCm: number;
+        weightKg: number;
+        isMale: boolean;
+      }>,
+    ) {
+      const { steps, heightCm, weightKg, isMale } = action.payload;
+      const stats = calculateStepStats(steps, heightCm, weightKg, isMale);
+      state.dailyStepGoal = steps;
+      state.dailyCalorieGoal = stats.caloriesBurned;
+      state.dailyDistanceGoalKm = stats.distanceKm;
+      state.dailyActiveGoal = Math.round(steps / 100);
+    },
     resetGoals(state) {
       state.dailyStepGoal = 10000;
       state.dailyCalorieGoal = 400;
@@ -50,6 +71,7 @@ export const {
   setDailyDistanceGoal,
   setDailyActiveGoal,
   setUnits,
+  setAllGoalsFromSteps,
   resetGoals,
 } = settingsSlice.actions;
 export default settingsSlice.reducer;

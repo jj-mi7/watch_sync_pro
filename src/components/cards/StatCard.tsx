@@ -1,6 +1,7 @@
 import type React from "react";
 import { Text, View, type ViewStyle } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { moderateScale } from "react-native-size-matters";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 interface StatCardProps {
@@ -48,9 +49,9 @@ const styles = StyleSheet.create((theme) => ({
     flex: 1,
   },
   iconBadge: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: moderateScale(36),
+    height: moderateScale(36),
+    borderRadius: moderateScale(18),
     justifyContent: "center",
     alignItems: "center",
     marginBottom: theme.spacing.sm,

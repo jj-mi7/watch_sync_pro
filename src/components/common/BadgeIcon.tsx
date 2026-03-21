@@ -1,6 +1,7 @@
 import type { Badge } from "@/types";
 import type React from "react";
 import { Text, View } from "react-native";
+import { moderateScale } from "react-native-size-matters";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 interface BadgeIconProps {
@@ -36,13 +37,13 @@ export const BadgeIcon: React.FC<BadgeIconProps> = ({ badge }) => {
 const styles = StyleSheet.create((theme) => ({
   container: {
     alignItems: "center",
-    width: 80,
+    width: moderateScale(72),
     marginRight: theme.spacing.md,
   },
   circle: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
+    width: moderateScale(52),
+    height: moderateScale(52),
+    borderRadius: moderateScale(26),
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,

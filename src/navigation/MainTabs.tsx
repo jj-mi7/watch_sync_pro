@@ -11,6 +11,8 @@ import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type React from "react";
 import { Text, View } from "react-native";
+import { moderateScale } from "react-native-size-matters";
+import Feather from "react-native-vector-icons/Feather";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 const Tab = createBottomTabNavigator();
@@ -34,15 +36,27 @@ const TrackingNavigator: React.FC = () => (
   </TrackingStack.Navigator>
 );
 
-const TabIcon: React.FC<{ icon: string; label: string; focused: boolean; color: string }> = ({
-  icon,
-  label,
-  focused,
-  color,
-}) => (
+const TabIcon: React.FC<{
+  iconName: string;
+  label: string;
+  focused: boolean;
+  color: string;
+}> = ({ iconName, label, focused, color }) => (
   <View style={tabStyles.iconContainer}>
-    <Text style={[tabStyles.icon, { opacity: focused ? 1 : 0.5 }]}>{icon}</Text>
-    <Text style={[tabStyles.label, { color, opacity: focused ? 1 : 0.5 }]}>{label}</Text>
+    <Feather
+      name={iconName}
+      size={moderateScale(20)}
+      color={color}
+      style={{ opacity: focused ? 1 : 0.4 }}
+    />
+    <Text
+      style={[
+        tabStyles.label,
+        { color, opacity: focused ? 1 : 0.4 },
+      ]}
+    >
+      {label}
+    </Text>
     {focused && <View style={[tabStyles.indicator, { backgroundColor: color }]} />}
   </View>
 );
@@ -51,22 +65,19 @@ const tabStyles = StyleSheet.create((theme) => ({
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
-    paddingTop: 6,
-  },
-  icon: {
-    fontSize: theme.fontSize.lg,
-    marginBottom: 2,
+    paddingTop: 4,
   },
   label: {
-    fontSize: theme.fontSize.xs,
-    fontWeight: "700",
-    letterSpacing: 0.5,
+    fontSize: moderateScale(10),
+    fontWeight: "600",
+    letterSpacing: 0.3,
+    marginTop: 2,
   },
   indicator: {
     width: 4,
     height: 4,
     borderRadius: 2,
-    marginTop: 4,
+    marginTop: 3,
   },
 }));
 
@@ -81,9 +92,9 @@ export const MainTabs: React.FC = () => {
           backgroundColor: theme.colors.tabBarBg,
           borderTopWidth: 1,
           borderTopColor: theme.colors.surfaceLight,
-          height: 64,
-          paddingBottom: 6,
-          paddingTop: 4,
+          height: moderateScale(60),
+          paddingBottom: 4,
+          paddingTop: 2,
         },
         tabBarShowLabel: false,
         tabBarActiveTintColor: theme.colors.primary,
@@ -95,7 +106,7 @@ export const MainTabs: React.FC = () => {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon icon="🏠" label="Home" focused={focused} color={color} />
+            <TabIcon iconName="home" label="Home" focused={focused} color={color} />
           ),
         }}
       />
@@ -104,7 +115,7 @@ export const MainTabs: React.FC = () => {
         component={TrackingNavigator}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon icon="👟" label="Steps" focused={focused} color={color} />
+            <TabIcon iconName="activity" label="Steps" focused={focused} color={color} />
           ),
         }}
       />
@@ -113,7 +124,7 @@ export const MainTabs: React.FC = () => {
         component={DeviceNavigator}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon icon="⌚" label="Watch" focused={focused} color={color} />
+            <TabIcon iconName="watch" label="Watch" focused={focused} color={color} />
           ),
         }}
       />
@@ -122,7 +133,7 @@ export const MainTabs: React.FC = () => {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon icon="⚙️" label="Settings" focused={focused} color={color} />
+            <TabIcon iconName="settings" label="Settings" focused={focused} color={color} />
           ),
         }}
       />

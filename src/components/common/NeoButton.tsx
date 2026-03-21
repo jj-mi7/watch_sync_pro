@@ -43,14 +43,17 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
 
   const sizeStyles = {
     sm: { height: 40, paddingHorizontal: theme.spacing.lg },
-    md: { height: 52, paddingHorizontal: theme.spacing.xl },
-    lg: { height: 60, paddingHorizontal: theme.spacing.xxl },
+    md: { height: 48, paddingHorizontal: theme.spacing.xl },
+    lg: { height: 52, paddingHorizontal: theme.spacing.xxl },
   };
 
-  const bgColor = variant === "filled" ? activeColor : "transparent";
-  const borderColor = variant === "outline" ? activeColor : "transparent";
-  const textColor =
-    variant === "ghost" ? activeColor : variant === "outline" ? activeColor : "#000";
+  // Light, muted style: soft bg + colored text (minimalistic)
+  const bgColor =
+    variant === "filled"
+      ? `${activeColor}18` // 10% opacity tinted bg
+      : "transparent";
+  const borderColor = variant === "outline" ? `${activeColor}40` : "transparent";
+  const textColor = activeColor;
 
   return (
     <AnimatedTouchable
@@ -65,7 +68,7 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
         {
           backgroundColor: bgColor,
           borderColor,
-          borderWidth: variant === "outline" ? 1.5 : 0,
+          borderWidth: variant === "outline" ? 1 : 0,
           opacity: disabled ? 0.5 : 1,
         },
         animatedStyle,
@@ -75,7 +78,15 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
       <Text
         style={[
           styles.text,
-          { color: textColor, fontSize: size === "sm" ? 13 : size === "lg" ? 16 : 14 },
+          {
+            color: textColor,
+            fontSize:
+              size === "sm"
+                ? theme.fontSize.caption
+                : size === "lg"
+                  ? theme.fontSize.body
+                  : theme.fontSize.caption,
+          },
         ]}
       >
         {title}
@@ -86,13 +97,13 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
 
 const styles = StyleSheet.create((theme) => ({
   button: {
-    borderRadius: theme.borderRadius.round,
+    borderRadius: theme.borderRadius.md,
     justifyContent: "center",
     alignItems: "center",
   },
   text: {
-    fontWeight: "800",
-    letterSpacing: 1,
+    fontWeight: "700",
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
 }));

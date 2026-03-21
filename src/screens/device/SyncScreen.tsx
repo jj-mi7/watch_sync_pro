@@ -13,7 +13,7 @@ import type { RootState } from "@/redux/store";
 import { NotificationService } from "@/services/notifications/NotificationService";
 import { calculateActiveMinutes, calculateCalories, calculateDistanceKm } from "@/utils/healthMath";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Alert, Platform, ScrollView, Text, View } from "react-native";
+import { Alert, PermissionsAndroid, Platform, Text, View } from "react-native";
 import { BleManager, State as BleState } from "react-native-ble-plx";
 import Animated, {
   FadeInDown,
@@ -29,6 +29,7 @@ import Animated, {
   interpolate,
 } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
+import { moderateScale } from "react-native-size-matters";
 import { useDispatch, useSelector } from "react-redux";
 
 // ─── CASIO BLE CONSTANTS ─────────────────────────────────────────────────────
@@ -260,7 +261,7 @@ export const SyncScreen: React.FC = () => {
               addDailyRecord({
                 date: recordDate.toISOString().split("T")[0],
                 steps,
-                calories: calculateCalories(steps, user.weightKg),
+                calories: calculateCalories(steps, user.weightKg, user.heightCm, user.gender),
                 distanceKm: calculateDistanceKm(steps, user.heightCm, user.gender),
                 activeMinutes: calculateActiveMinutes(steps),
               }),
@@ -429,23 +430,67 @@ export const SyncScreen: React.FC = () => {
     setHasError(false);
     addLog("SYS", "Checking Bluetooth…");
 
+    // Request BLE permissions on Android
+    if (Platform.OS === "android") {
+      try {
+        const granted = await PermissionsAndroid.requestMultiple([
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_SCAN,
+          PermissionsAndroid.PERMISSIONS.BLUETOOTH_CONNECT,
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        ]);
+        const allGranted = Object.values(granted).every(
+          (v) => v === PermissionsAndroid.RESULTS.GRANTED,
+        );
+        if (!allGranted) {
+          addLog("ERR", "Bluetooth permissions not granted");
+          dispatch(setConnectionStatus("disconnected"));
+          setHasError(true);
+          Alert.alert(
+            "Permission Required",
+            "Bluetooth and Location permissions are needed to scan for your watch.",
+          );
+          return;
+        }
+      } catch (e) {
+        addLog("ERR", "Permission request failed");
+        dispatch(setConnectionStatus("disconnected"));
+        setHasError(true);
+        return;
+      }
+    }
+
     const state = await bleManager.state();
     if (state !== BleState.PoweredOn) {
       addLog("ERR", `Bluetooth is ${state}. Please enable it.`);
       dispatch(setConnectionStatus("disconnected"));
       setHasError(true);
+      Alert.alert(
+        "Bluetooth Off",
+        "Please enable Bluetooth in your device settings to connect to your watch.",
+      );
       return;
     }
 
-    addLog("SYS", "Scanning…");
+    addLog("SYS", "Scanning (30s timeout)…");
+
+    // 30-second scan timeout
+    const scanTimeout = setTimeout(() => {
+      bleManager.stopDeviceScan();
+      addLog("WARN", "Scan timed out after 30 seconds");
+      dispatch(setConnectionStatus("disconnected"));
+      setHasError(true);
+    }, 30000);
+
     bleManager.startDeviceScan(null, { allowDuplicates: false }, async (error, scanDevice) => {
       if (error) {
+        clearTimeout(scanTimeout);
         addLog("ERR", `Scan error: ${error.message}`);
         setHasError(true);
         dispatch(setConnectionStatus("disconnected"));
         return;
       }
       if (scanDevice?.name?.includes("CASIO") || scanDevice?.id === "CF:76:44:C4:B8:14") {
+        clearTimeout(scanTimeout);
         bleManager.stopDeviceScan();
         dispatch(setConnectionStatus("connecting"));
         addLog("SYS", `Found: ${scanDevice.name || scanDevice.id}`);
@@ -682,9 +727,9 @@ const styles = StyleSheet.create((theme) => ({
     color: theme.colors.textPrimary,
   },
   statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
+    width: moderateScale(10),
+    height: moderateScale(10),
+    borderRadius: moderateScale(5),
   },
   statusArea: {
     flex: 1,
@@ -693,15 +738,15 @@ const styles = StyleSheet.create((theme) => ({
   },
   // Pulse scanning
   pulseContainer: {
-    width: 180,
-    height: 180,
+    width: moderateScale(160),
+    height: moderateScale(160),
     justifyContent: "center",
     alignItems: "center",
   },
   centerIcon: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
+    width: moderateScale(72),
+    height: moderateScale(72),
+    borderRadius: moderateScale(36),
     backgroundColor: theme.colors.surface,
     borderWidth: 2,
     borderColor: theme.colors.warning,
@@ -717,9 +762,9 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
   },
   successCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: moderateScale(100),
+    height: moderateScale(100),
+    borderRadius: moderateScale(50),
     borderWidth: 3,
     backgroundColor: theme.colors.surface,
     justifyContent: "center",
@@ -732,22 +777,22 @@ const styles = StyleSheet.create((theme) => ({
   },
   // Syncing
   syncContainer: {
-    width: 120,
-    height: 120,
+    width: moderateScale(100),
+    height: moderateScale(100),
     justifyContent: "center",
     alignItems: "center",
   },
   syncRing: {
     position: "absolute",
-    width: 120,
-    height: 120,
+    width: moderateScale(100),
+    height: moderateScale(100),
     justifyContent: "center",
     alignItems: "center",
   },
   syncArc: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: moderateScale(100),
+    height: moderateScale(100),
+    borderRadius: moderateScale(50),
     borderWidth: 3,
     borderTopColor: "transparent",
     borderRightColor: "transparent",
@@ -759,9 +804,9 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
   },
   errorCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: moderateScale(100),
+    height: moderateScale(100),
+    borderRadius: moderateScale(50),
     borderWidth: 3,
     backgroundColor: theme.colors.surface,
     justifyContent: "center",
@@ -778,9 +823,9 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
   },
   idleCircle: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
+    width: moderateScale(100),
+    height: moderateScale(100),
+    borderRadius: moderateScale(50),
     borderWidth: 2,
     borderStyle: "dashed",
     backgroundColor: theme.colors.surface,
