@@ -12,6 +12,7 @@
     "check": "biome check --write ./src"
   },
   "dependencies": {
+    "@notifee/react-native": "^9.1.8",
     "@react-native-google-signin/google-signin": "^13.1.2",
     "@react-native/new-app-screen": "0.84.1",
     "@react-navigation/bottom-tabs": "^7.3.10",

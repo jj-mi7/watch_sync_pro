@@ -4,6 +4,7 @@ interface SettingsState {
   dailyStepGoal: number;
   dailyCalorieGoal: number;
   dailyDistanceGoalKm: number;
+  dailyActiveGoal: number;
   units: "metric" | "imperial";
 }
 
@@ -11,6 +12,7 @@ const initialState: SettingsState = {
   dailyStepGoal: 10000,
   dailyCalorieGoal: 400,
   dailyDistanceGoalKm: 7,
+  dailyActiveGoal: 30,
   units: "metric",
 };
 
@@ -27,6 +29,9 @@ const settingsSlice = createSlice({
     setDailyDistanceGoal(state, action: PayloadAction<number>) {
       state.dailyDistanceGoalKm = action.payload;
     },
+    setDailyActiveGoal(state, action: PayloadAction<number>) {
+      state.dailyActiveGoal = action.payload;
+    },
     setUnits(state, action: PayloadAction<"metric" | "imperial">) {
       state.units = action.payload;
     },
@@ -34,10 +39,17 @@ const settingsSlice = createSlice({
       state.dailyStepGoal = 10000;
       state.dailyCalorieGoal = 400;
       state.dailyDistanceGoalKm = 7;
+      state.dailyActiveGoal = 30;
     },
   },
 });
 
-export const { setDailyStepGoal, setDailyCalorieGoal, setDailyDistanceGoal, setUnits, resetGoals } =
-  settingsSlice.actions;
+export const {
+  setDailyStepGoal,
+  setDailyCalorieGoal,
+  setDailyDistanceGoal,
+  setDailyActiveGoal,
+  setUnits,
+  resetGoals,
+} = settingsSlice.actions;
 export default settingsSlice.reducer;

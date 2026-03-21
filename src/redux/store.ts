@@ -14,11 +14,12 @@ import authReducer from "./slices/authSlice";
 import deviceReducer from "./slices/deviceSlice";
 import healthReducer from "./slices/healthSlice";
 import settingsReducer from "./slices/settingsSlice";
+import userReducer from "./slices/userSlice";
 
 const persistConfig = {
   key: "root",
   storage: mmkvStorage,
-  whitelist: ["auth", "health", "settings", "device"],
+  whitelist: ["auth", "health", "settings", "device", "user"],
 };
 
 const rootReducer = combineReducers({
@@ -26,6 +27,7 @@ const rootReducer = combineReducers({
   device: deviceReducer,
   health: healthReducer,
   settings: settingsReducer,
+  user: userReducer,
 });
 
 const persistedReducer = persistReducer(persistConfig, rootReducer);

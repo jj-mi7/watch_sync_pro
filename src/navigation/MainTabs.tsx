@@ -3,6 +3,7 @@ import { SyncScreen } from "@/screens/device/SyncScreen";
 import { WatchProfileScreen } from "@/screens/device/WatchProfileScreen";
 import { FindPhoneScreen } from "@/screens/misc/FindPhoneScreen";
 import { SettingsScreen } from "@/screens/misc/SettingsScreen";
+import { ActiveScreen } from "@/screens/tracking/ActiveScreen";
 import { CaloriesScreen } from "@/screens/tracking/CaloriesScreen";
 import { DistanceScreen } from "@/screens/tracking/DistanceScreen";
 import { StepsScreen } from "@/screens/tracking/StepsScreen";
@@ -29,6 +30,7 @@ const TrackingNavigator: React.FC = () => (
     <TrackingStack.Screen name="StepsMain" component={StepsScreen} />
     <TrackingStack.Screen name="Calories" component={CaloriesScreen} />
     <TrackingStack.Screen name="Distance" component={DistanceScreen} />
+    <TrackingStack.Screen name="Active" component={ActiveScreen} />
   </TrackingStack.Navigator>
 );
 

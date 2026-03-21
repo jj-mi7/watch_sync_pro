@@ -1,72 +1,66 @@
 import { GlassCard } from "@/components/cards/GlassCard";
 import { HealthChart } from "@/components/charts/HealthChart";
 import { AnimatedRing } from "@/components/common/AnimatedRing";
-import { BadgeIcon } from "@/components/common/BadgeIcon";
 import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { setDailyStepGoal } from "@/redux/slices/settingsSlice";
+import { setDailyActiveGoal } from "@/redux/slices/settingsSlice";
 import type { RootState } from "@/redux/store";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { Modal, ScrollView, Text, TouchableOpacity, View } from "react-native";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
 
 const DAYS_LABEL_7 = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
-export const StepsScreen: React.FC = () => {
+export const ActiveScreen: React.FC = () => {
   const { theme } = useUnistyles();
   const dispatch = useDispatch();
-  const { todaySteps, history, badges } = useSelector((state: RootState) => state.health);
-  const { dailyStepGoal } = useSelector((state: RootState) => state.settings);
+  const { todayActiveMinutes, history } = useSelector((state: RootState) => state.health);
+  const { dailyActiveGoal } = useSelector((state: RootState) => state.settings);
   const [chartRange, setChartRange] = useState<"week" | "month">("week");
   const [showGoalModal, setShowGoalModal] = useState(false);
-  const [tempGoal, setTempGoal] = useState(dailyStepGoal);
+  const [tempGoal, setTempGoal] = useState(dailyActiveGoal);
 
-  const progress = dailyStepGoal > 0 ? todaySteps / dailyStepGoal : 0;
+  const progress = dailyActiveGoal > 0 ? todayActiveMinutes / dailyActiveGoal : 0;
 
   const chartData = useMemo(() => {
     const count = chartRange === "week" ? 7 : 30;
     if (history.length === 0) {
       // Demo data when no history
       return chartRange === "week"
-        ? [3200, 5600, 8100, 4500, 9200, 7800, todaySteps || 6500]
-        : Array.from({ length: 30 }, () => Math.floor(Math.random() * 10000) + 2000);
+        ? [15, 45, 30, 0, 60, 25, todayActiveMinutes || 20]
+        : Array.from({ length: 30 }, () => Math.floor(Math.random() * 90) + 10);
     }
     const last = history.slice(-count);
-    return last.map((r) => r.steps);
-  }, [history, chartRange, todaySteps]);
+    return last.map((r) => r.activeMinutes || 0);
+  }, [history, chartRange, todayActiveMinutes]);
 
   const chartLabels = useMemo(() => {
     if (chartRange === "week") return DAYS_LABEL_7;
     return Array.from({ length: 30 }, (_, i) => (i % 5 === 0 ? `${i + 1}` : ""));
   }, [chartRange]);
 
-  const goalPresets = [5000, 8000, 10000, 12000, 15000];
+  const goalPresets = [15, 30, 45, 60, 90];
 
   return (
     <ScreenWrapper>
       {/* Header */}
       <Animated.View entering={FadeInDown.duration(400)} style={styles.header}>
-        <Text style={styles.title}>Steps</Text>
+        <Text style={styles.title}>Active Mins</Text>
         <TouchableOpacity style={styles.goalBadge} onPress={() => setShowGoalModal(true)}>
-          <Text style={styles.goalBadgeText}>🎯 {dailyStepGoal.toLocaleString()}</Text>
+          <Text style={styles.goalBadgeText}>🎯 {dailyActiveGoal.toLocaleString()}</Text>
         </TouchableOpacity>
       </Animated.View>
 
       {/* Hero Ring */}
       <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.heroSection}>
-        <AnimatedRing
-          progress={progress}
-          size={180}
-          strokeWidth={12}
-          color={theme.colors.chartCyan}
-        >
-          <Text style={styles.heroValue}>{todaySteps.toLocaleString()}</Text>
-          <Text style={styles.heroLabel}>STEPS TODAY</Text>
+        <AnimatedRing progress={progress} size={180} strokeWidth={12} color={theme.colors.info}>
+          <Text style={styles.heroValue}>{todayActiveMinutes.toLocaleString()}</Text>
+          <Text style={styles.heroLabel}>MINS TODAY</Text>
           <Text style={styles.heroGoal}>
-            {Math.round(progress * 100)}% of {dailyStepGoal.toLocaleString()}
+            {Math.round(progress * 100)}% of {dailyActiveGoal.toLocaleString()}
           </Text>
         </AnimatedRing>
       </Animated.View>
@@ -75,16 +69,16 @@ export const StepsScreen: React.FC = () => {
       <HealthChart
         data={chartData}
         labels={chartLabels}
-        color={theme.colors.chartCyan}
-        title="STEP HISTORY"
-        unit="steps"
+        color={theme.colors.info}
+        title="ACTIVE HISTORY"
+        unit="mins"
         activeRange={chartRange}
         onRangeChange={setChartRange}
       />
 
       {/* Daily Log */}
       <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-        <GlassCard glowColor={theme.colors.chartCyan} style={styles.logCard}>
+        <GlassCard glowColor={theme.colors.info} style={styles.logCard}>
           <Text style={styles.sectionLabel}>RECENT LOG</Text>
           {(history.length > 0 ? history.slice(-7).reverse() : demoLog()).map((record, i) => (
             // biome-ignore lint/suspicious/noArrayIndexKey: array is static
@@ -95,38 +89,26 @@ export const StepsScreen: React.FC = () => {
                   style={[
                     styles.logBar,
                     {
-                      width: `${Math.min((record.steps / dailyStepGoal) * 100, 100)}%`,
+                      width: `${Math.min(((record.activeMinutes || 0) / dailyActiveGoal) * 100, 100)}%`,
                       backgroundColor:
-                        record.steps >= dailyStepGoal
+                        (record.activeMinutes || 0) >= dailyActiveGoal
                           ? theme.colors.success
-                          : theme.colors.chartCyan,
+                          : theme.colors.info,
                     },
                   ]}
                 />
               </View>
-              <Text style={styles.logSteps}>{record.steps.toLocaleString()}</Text>
+              <Text style={styles.logSteps}>{record.activeMinutes || 0}m</Text>
             </View>
           ))}
-        </GlassCard>
-      </Animated.View>
-
-      {/* Gamification / Badges */}
-      <Animated.View entering={FadeInDown.delay(500).duration(400)}>
-        <GlassCard glowColor={theme.colors.primary} style={styles.badgesCard}>
-          <Text style={styles.sectionLabel}>MILESTONE BADGES</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.badgesScroll}>
-            {badges.map((badge) => (
-              <BadgeIcon key={badge.id} badge={badge} />
-            ))}
-          </ScrollView>
         </GlassCard>
       </Animated.View>
 
       {/* Goal Setter Modal */}
       <Modal visible={showGoalModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <GlassCard glowColor={theme.colors.primary} style={styles.modalCard}>
-            <Text style={styles.modalTitle}>Set Daily Step Goal</Text>
+          <GlassCard glowColor={theme.colors.info} style={styles.modalCard}>
+            <Text style={styles.modalTitle}>Set Daily Active Goal</Text>
             <View style={styles.goalPresets}>
               {goalPresets.map((preset) => (
                 <TouchableOpacity
@@ -135,30 +117,27 @@ export const StepsScreen: React.FC = () => {
                     styles.presetBtn,
                     tempGoal === preset && {
                       backgroundColor: theme.colors.primaryGlow,
-                      borderColor: theme.colors.primary,
+                      borderColor: theme.colors.info,
                     },
                   ]}
                   onPress={() => setTempGoal(preset)}
                 >
                   <Text
-                    style={[
-                      styles.presetText,
-                      tempGoal === preset && { color: theme.colors.primary },
-                    ]}
+                    style={[styles.presetText, tempGoal === preset && { color: theme.colors.info }]}
                   >
-                    {preset.toLocaleString()}
+                    {preset.toLocaleString()} m
                   </Text>
                 </TouchableOpacity>
               ))}
             </View>
-            <Text style={styles.selectedGoal}>{tempGoal.toLocaleString()} steps/day</Text>
+            <Text style={styles.selectedGoal}>{tempGoal.toLocaleString()} mins/day</Text>
             <NeoButton
               title="SET GOAL"
               onPress={() => {
-                dispatch(setDailyStepGoal(tempGoal));
+                dispatch(setDailyActiveGoal(tempGoal));
                 setShowGoalModal(false);
               }}
-              color={theme.colors.primary}
+              color={theme.colors.info}
               size="md"
               style={{ marginTop: theme.spacing.lg }}
             />
@@ -180,8 +159,14 @@ export const StepsScreen: React.FC = () => {
 // Helpers
 function demoLog() {
   const days = ["Today", "Yesterday", "2d ago", "3d ago", "4d ago", "5d ago", "6d ago"];
-  const steps = [6500, 8200, 3400, 11000, 7600, 9100, 5800];
-  return days.map((d, i) => ({ date: d, steps: steps[i], calories: 0, distanceKm: 0 }));
+  const mins = [20, 45, 10, 60, 30, 25, 15];
+  return days.map((d, i) => ({
+    date: d,
+    steps: 0,
+    calories: 0,
+    distanceKm: 0,
+    activeMinutes: mins[i],
+  }));
 }
 
 function formatDate(dateStr: string): string {
@@ -213,14 +198,14 @@ const styles = StyleSheet.create((theme) => ({
     paddingVertical: theme.spacing.sm,
     borderRadius: theme.borderRadius.round,
     borderWidth: 1,
-    borderColor: `${theme.colors.primary}40`,
+    borderColor: `${theme.colors.info}40`,
   },
   goalBadgeText: {
     fontSize: theme.fontSize.xs,
     textTransform: "uppercase",
     letterSpacing: 1,
     fontWeight: "600",
-    color: theme.colors.primary,
+    color: theme.colors.info,
   },
   heroSection: {
     alignItems: "center",
@@ -242,7 +227,7 @@ const styles = StyleSheet.create((theme) => ({
   },
   heroGoal: {
     fontSize: theme.fontSize.caption,
-    color: theme.colors.chartCyan,
+    color: theme.colors.info,
     marginTop: 2,
   },
   sectionLabel: {
@@ -285,13 +270,6 @@ const styles = StyleSheet.create((theme) => ({
     width: 52,
     textAlign: "right",
     fontWeight: "700",
-  },
-  badgesCard: {
-    marginBottom: theme.spacing.xl,
-  },
-  badgesScroll: {
-    flexDirection: "row",
-    paddingVertical: theme.spacing.sm,
   },
   // Modal
   modalOverlay: {

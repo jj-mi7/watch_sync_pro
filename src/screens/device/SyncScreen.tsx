@@ -8,8 +8,10 @@ import {
   setDevice,
   setLastSyncTime,
 } from "@/redux/slices/deviceSlice";
-import { addDailyRecord, setTodaySteps } from "@/redux/slices/healthSlice";
+import { addDailyRecord, setTodaySteps, unlockBadge } from "@/redux/slices/healthSlice";
 import type { RootState } from "@/redux/store";
+import { NotificationService } from "@/services/notifications/NotificationService";
+import { calculateActiveMinutes, calculateCalories, calculateDistanceKm } from "@/utils/healthMath";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { BleManager, State as BleState } from "react-native-ble-plx";
@@ -30,6 +32,9 @@ export const SyncScreen: React.FC = () => {
   const { theme } = useUnistyles();
   const dispatch = useDispatch();
   const { connectionStatus, syncLogs } = useSelector((state: RootState) => state.device);
+  const user = useSelector((state: RootState) => state.user);
+  const { badges } = useSelector((state: RootState) => state.health);
+  const { dailyStepGoal } = useSelector((state: RootState) => state.settings);
   // biome-ignore lint/suspicious/noExplicitAny: BleDevice type not imported yet
   const [connectedDevice, setConnectedDevice] = useState<any>(null);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -144,8 +149,9 @@ export const SyncScreen: React.FC = () => {
               addDailyRecord({
                 date: recordDate.toISOString().split("T")[0],
                 steps,
-                calories: Math.round(steps * 0.04),
-                distanceKm: Number.parseFloat((steps * 0.0007).toFixed(2)),
+                calories: calculateCalories(steps, user.weightKg),
+                distanceKm: calculateDistanceKm(steps, user.heightCm, user.gender),
+                activeMinutes: calculateActiveMinutes(steps),
               }),
             );
           }
@@ -157,8 +163,52 @@ export const SyncScreen: React.FC = () => {
         "STEPS",
         `Parsed Today: ${finalSteps.toLocaleString()} | Display: ${displaySteps.toLocaleString()}`,
       );
-      dispatch(setTodaySteps(displaySteps));
+      dispatch(
+        setTodaySteps({
+          steps: displaySteps,
+          heightCm: user.heightCm,
+          weightKg: user.weightKg,
+          gender: user.gender,
+        }),
+      );
       dispatch(setLastSyncTime(new Date().toLocaleTimeString("en-US", { hour12: false })));
+
+      // Check Gamification
+      const dist = calculateDistanceKm(displaySteps, user.heightCm, user.gender);
+      const active = calculateActiveMinutes(displaySteps);
+
+      for (const b of badges) {
+        if (b.unlockedAt) continue;
+        let earned = false;
+        if (b.id === "steps_5k" && displaySteps >= 5000) earned = true;
+        if (b.id === "steps_10k" && displaySteps >= 10000) earned = true;
+        if (b.id === "steps_20k" && displaySteps >= 20000) earned = true;
+        if (b.id === "dist_5k" && dist >= 5) earned = true;
+        if (b.id === "active_30m" && active >= 30) earned = true;
+
+        if (earned) {
+          dispatch(unlockBadge(b.id));
+          NotificationService.displayGoalNotification(
+            "New Milestone! 🏆",
+            `You earned the ${b.name} badge: ${b.description}`,
+          );
+        }
+      }
+
+      // Check daily goal proximity
+      const stepsRemaining = dailyStepGoal - displaySteps;
+      if (stepsRemaining > 0 && stepsRemaining <= 1000) {
+        NotificationService.displayGoalNotification(
+          "Almost there! 🎯",
+          `You are only ${stepsRemaining.toLocaleString()} steps away from your daily goal!`,
+        );
+      } else if (stepsRemaining <= 0 && displaySteps - finalSteps < dailyStepGoal) {
+        // Optionally notify if goal was reached just now
+        NotificationService.displayGoalNotification(
+          "Goal Reached! 🌟",
+          `Congratulations! You've reached your daily goal of ${dailyStepGoal.toLocaleString()} steps.`,
+        );
+      }
 
       fileBuffer.current = "";
       expectedFileBytes.current = 0;
@@ -167,7 +217,7 @@ export const SyncScreen: React.FC = () => {
         fileReceiveResolve.current = null;
       }
     },
-    [addLog, dispatch, bcdByte],
+    [addLog, dispatch, bcdByte, user, badges, dailyStepGoal],
   );
 
   const sendToWatch = async (

@@ -7,6 +7,10 @@ export type AuthStackParamList = {
   Login: undefined;
 };
 
+export type OnboardingStackParamList = {
+  Biometrics: undefined;
+};
+
 export type MainTabParamList = {
   Dashboard: undefined;
   Steps: undefined;
@@ -25,6 +29,15 @@ export interface DailyRecord {
   steps: number;
   calories: number;
   distanceKm: number;
+  activeMinutes: number;
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string; // Emoji for simplicity payload
+  unlockedAt?: string;
 }
 
 export interface UserProfile {

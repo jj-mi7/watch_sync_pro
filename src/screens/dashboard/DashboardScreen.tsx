@@ -4,9 +4,10 @@ import { WatchCard } from "@/components/cards/WatchCard";
 import { AnimatedRing } from "@/components/common/AnimatedRing";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import type { RootState } from "@/redux/store";
+import { NotificationService } from "@/services/notifications/NotificationService";
 import { useNavigation } from "@react-navigation/native";
 import type React from "react";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
@@ -14,12 +15,13 @@ import { useSelector } from "react-redux";
 
 export const DashboardScreen: React.FC = () => {
   const { theme } = useUnistyles();
+  // biome-ignore lint/suspicious/noExplicitAny: Root stack param list not fully enforced yet
   const navigation = useNavigation<any>();
   const { device, connectionStatus } = useSelector((state: RootState) => state.device);
-  const { todaySteps, todayCalories, todayDistanceKm } = useSelector(
+  const { todaySteps, todayCalories, todayDistanceKm, todayActiveMinutes } = useSelector(
     (state: RootState) => state.health,
   );
-  const { dailyStepGoal, dailyCalorieGoal, dailyDistanceGoalKm } = useSelector(
+  const { dailyStepGoal, dailyCalorieGoal, dailyDistanceGoalKm, dailyActiveGoal } = useSelector(
     (state: RootState) => state.settings,
   );
 
@@ -35,6 +37,14 @@ export const DashboardScreen: React.FC = () => {
     () => (dailyDistanceGoalKm > 0 ? todayDistanceKm / dailyDistanceGoalKm : 0),
     [todayDistanceKm, dailyDistanceGoalKm],
   );
+  const activeProgress = useMemo(
+    () => (dailyActiveGoal > 0 ? todayActiveMinutes / dailyActiveGoal : 0),
+    [todayActiveMinutes, dailyActiveGoal],
+  );
+
+  useEffect(() => {
+    NotificationService.requestPermissions();
+  }, []);
 
   return (
     <ScreenWrapper>
@@ -70,25 +80,42 @@ export const DashboardScreen: React.FC = () => {
           <View style={styles.ringsRow}>
             {/* Steps Ring */}
             <TouchableOpacity style={styles.ringItem} onPress={() => navigation.navigate("Steps")}>
-              <AnimatedRing progress={stepProgress} size={90} color={theme.colors.chartCyan}>
+              <AnimatedRing progress={stepProgress} size={75} color={theme.colors.chartCyan}>
                 <Text style={styles.ringValue}>{formatNumber(todaySteps)}</Text>
                 <Text style={styles.ringUnit}>steps</Text>
               </AnimatedRing>
             </TouchableOpacity>
 
             {/* Calories Ring */}
-            <TouchableOpacity style={styles.ringItem}>
-              <AnimatedRing progress={calProgress} size={90} color={theme.colors.chartPurple}>
+            <TouchableOpacity
+              style={styles.ringItem}
+              onPress={() => navigation.navigate("Steps", { screen: "Calories" })}
+            >
+              <AnimatedRing progress={calProgress} size={75} color={theme.colors.chartPurple}>
                 <Text style={styles.ringValue}>{todayCalories}</Text>
                 <Text style={styles.ringUnit}>cal</Text>
               </AnimatedRing>
             </TouchableOpacity>
 
             {/* Distance Ring */}
-            <TouchableOpacity style={styles.ringItem}>
-              <AnimatedRing progress={distProgress} size={90} color={theme.colors.chartGreen}>
+            <TouchableOpacity
+              style={styles.ringItem}
+              onPress={() => navigation.navigate("Steps", { screen: "Distance" })}
+            >
+              <AnimatedRing progress={distProgress} size={75} color={theme.colors.chartGreen}>
                 <Text style={styles.ringValue}>{todayDistanceKm}</Text>
                 <Text style={styles.ringUnit}>km</Text>
+              </AnimatedRing>
+            </TouchableOpacity>
+
+            {/* Active Mins Ring */}
+            <TouchableOpacity
+              style={styles.ringItem}
+              onPress={() => navigation.navigate("Steps", { screen: "Active" })}
+            >
+              <AnimatedRing progress={activeProgress} size={75} color={theme.colors.info}>
+                <Text style={styles.ringValue}>{todayActiveMinutes}</Text>
+                <Text style={styles.ringUnit}>min</Text>
               </AnimatedRing>
             </TouchableOpacity>
           </View>
@@ -146,6 +173,19 @@ export const DashboardScreen: React.FC = () => {
               onPress={() => navigation.navigate("Settings")}
             />
             <QuickAction icon="📊" label="History" onPress={() => navigation.navigate("Steps")} />
+          </View>
+        </GlassCard>
+      </Animated.View>
+
+      {/* Quick Start Workouts */}
+      <Animated.View entering={FadeInDown.delay(700).duration(500)}>
+        <GlassCard glowColor={theme.colors.chartOrange} style={styles.actionsCard}>
+          <Text style={styles.sectionLabel}>QUICK START WORKOUT</Text>
+          <View style={styles.actionsRow}>
+            <QuickAction icon="🏃" label="Run" onPress={() => console.log("Start Run")} />
+            <QuickAction icon="🚶" label="Walk" onPress={() => console.log("Start Walk")} />
+            <QuickAction icon="🚴" label="Cycle" onPress={() => console.log("Start Cycle")} />
+            <QuickAction icon="🧘" label="Yoga" onPress={() => console.log("Start Yoga")} />
           </View>
         </GlassCard>
       </Animated.View>
