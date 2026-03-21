@@ -108,16 +108,16 @@ export const MainTabs: React.FC = () => {
         component={DashboardScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon iconName="home" label="Home" focused={focused} color={color} />
+            <TabIcon iconName="shoe" label="Steps" focused={focused} color={color} />
           ),
         }}
       />
       <Tab.Screen
-        name="Steps"
+        name="Graphs"
         component={TrackingNavigator}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon iconName="activity" label="Steps" focused={focused} color={color} />
+            <TabIcon iconName="bar-chart-2" label="Graphs" focused={focused} color={color} />
           ),
         }}
       />
@@ -135,7 +135,7 @@ export const MainTabs: React.FC = () => {
         component={SettingsScreen}
         options={{
           tabBarIcon: ({ focused, color }) => (
-            <TabIcon iconName="settings" label="More" focused={focused} color={color} />
+            <TabIcon iconName="user" label="Profile" focused={focused} color={color} />
           ),
         }}
       />

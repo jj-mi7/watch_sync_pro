@@ -177,7 +177,7 @@ export const SyncScreen: React.FC = () => {
   const addLog = useCallback(
     (type: string, msg: string) => {
       const time = new Date().toLocaleTimeString("en-US", {
-        hour12: false,
+        hour12: true,
       });
       dispatch(addSyncLog({ time, type, msg }));
     },
@@ -290,7 +290,7 @@ export const SyncScreen: React.FC = () => {
           gender: user.gender,
         }),
       );
-      dispatch(setLastSyncTime(new Date().toLocaleTimeString("en-US", { hour12: false })));
+      dispatch(setLastSyncTime(new Date().toLocaleTimeString("en-US", { hour12: true })));
 
       // Check Gamification
       const dist = calculateDistanceKm(displaySteps, user.heightCm, user.gender);

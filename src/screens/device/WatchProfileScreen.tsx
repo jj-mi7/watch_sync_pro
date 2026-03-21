@@ -9,10 +9,13 @@ import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigation } from "@react-navigation/native";
 
 export const WatchProfileScreen: React.FC = () => {
   const { theme } = useUnistyles();
   const dispatch = useDispatch();
+  // biome-ignore lint/suspicious/noExplicitAny: Root stack param list not fully enforced yet
+  const navigation = useNavigation<any>();
   const { device, connectionStatus } = useSelector((state: RootState) => state.device);
 
   const handlePickImage = () => {
@@ -109,6 +112,16 @@ export const WatchProfileScreen: React.FC = () => {
         </GlassCard>
       </Animated.View>
 
+      <Animated.View entering={FadeInDown.delay(300).duration(500)}>
+        <NeoButton
+          title="SYNC DATA"
+          onPress={() => navigation.navigate("Sync")}
+          color={theme.colors.primary}
+          size="lg"
+          style={{ marginTop: theme.spacing.xl, marginBottom: theme.spacing.xl }}
+        />
+      </Animated.View>
+
     </ScreenWrapper>
   );
 };
@@ -167,20 +180,20 @@ const styles = StyleSheet.create((theme) => ({
     marginBottom: theme.spacing.xl,
   },
   photoContainer: {
-    width: 200,
-    height: 200,
-    borderRadius: 24,
+    width: 80,
+    height: 80,
+    borderRadius: 16,
     overflow: "hidden",
     marginBottom: theme.spacing.lg,
   },
   watchPhoto: {
-    width: 200,
-    height: 200,
+    width: 80,
+    height: 80,
     resizeMode: "cover",
   },
   photoPlaceholder: {
-    width: 200,
-    height: 200,
+    width: 80,
+    height: 80,
     backgroundColor: theme.colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
@@ -190,8 +203,8 @@ const styles = StyleSheet.create((theme) => ({
     borderRadius: 24,
   },
   photoPlaceholderIcon: {
-    fontSize: 48,
-    marginBottom: theme.spacing.sm,
+    fontSize: 24,
+    marginBottom: 2,
   },
   photoPlaceholderText: {
     fontSize: theme.fontSize.xs,

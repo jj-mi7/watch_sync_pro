@@ -145,15 +145,7 @@ export const DashboardScreen: React.FC = () => {
               </AnimatedRing>
             </TouchableOpacity>
 
-            <TouchableOpacity
-              style={styles.ringItem}
-              onPress={() => navigation.navigate("Steps", { screen: "Active" })}
-            >
-              <AnimatedRing progress={activeProgress} size={75} color={theme.colors.info}>
-                <Text style={styles.ringValue}>{todayActiveMinutes}</Text>
-                <Text style={styles.ringUnit}>min</Text>
-              </AnimatedRing>
-            </TouchableOpacity>
+
           </View>
         </GlassCard>
       </Animated.View>

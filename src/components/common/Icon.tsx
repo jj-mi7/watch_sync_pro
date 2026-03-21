@@ -11,7 +11,9 @@ const ICONS: Record<string, string> = {
   // Tab bar
   home: "⌂",
   activity: "◉",
+  shoe: "👟",
   watch: "⌚",
+  user: "👤",
   settings: "⚙",
   // Quick actions
   smartphone: "📱",
