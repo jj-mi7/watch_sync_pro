@@ -9,11 +9,11 @@ import { AppNavigator } from "@/navigation/AppNavigator";
 
 function App() {
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, backgroundColor: "#000000" }}>
       <Provider store={store}>
         <PersistGate loading={null} persistor={persistor}>
           <SafeAreaProvider>
-            <StatusBar barStyle="light-content" backgroundColor="#09090B" />
+            <StatusBar barStyle="light-content" backgroundColor="#000000" />
             <AppNavigator />
           </SafeAreaProvider>
         </PersistGate>

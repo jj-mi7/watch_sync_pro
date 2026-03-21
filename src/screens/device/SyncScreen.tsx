@@ -761,7 +761,7 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
   },
   centerEmoji: {
-    fontSize: 32,
+    fontSize: moderateScale(32),
   },
   // Connected success
   successContainer: {
@@ -778,7 +778,7 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
   },
   successCheck: {
-    fontSize: 48,
+    fontSize: moderateScale(48),
     color: theme.colors.success,
     fontWeight: "800",
   },
@@ -820,7 +820,7 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
   },
   errorX: {
-    fontSize: 48,
+    fontSize: moderateScale(48),
     color: theme.colors.error,
     fontWeight: "800",
   },
@@ -840,7 +840,7 @@ const styles = StyleSheet.create((theme) => ({
     alignItems: "center",
   },
   idleEmoji: {
-    fontSize: 48,
+    fontSize: moderateScale(48),
     opacity: 0.4,
   },
   // Labels

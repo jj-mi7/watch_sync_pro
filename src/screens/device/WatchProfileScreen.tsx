@@ -1,4 +1,5 @@
 import { GlassCard } from "@/components/cards/GlassCard";
+import { moderateScale } from "react-native-size-matters";
 import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
 import { setDevice, setWatchPhoto } from "@/redux/slices/deviceSlice";
@@ -180,31 +181,31 @@ const styles = StyleSheet.create((theme) => ({
     marginBottom: theme.spacing.xl,
   },
   photoContainer: {
-    width: 80,
-    height: 80,
-    borderRadius: 16,
+    width: moderateScale(80),
+    height: moderateScale(80),
+    borderRadius: moderateScale(16),
     overflow: "hidden",
     marginBottom: theme.spacing.lg,
   },
   watchPhoto: {
-    width: 80,
-    height: 80,
+    width: moderateScale(80),
+    height: moderateScale(80),
     resizeMode: "cover",
   },
   photoPlaceholder: {
-    width: 80,
-    height: 80,
+    width: moderateScale(80),
+    height: moderateScale(80),
     backgroundColor: theme.colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
     borderColor: theme.colors.surfaceBorder,
     borderStyle: "dashed",
-    borderRadius: 24,
+    borderRadius: moderateScale(24),
   },
   photoPlaceholderIcon: {
-    fontSize: 24,
-    marginBottom: 2,
+    fontSize: moderateScale(24),
+    marginBottom: moderateScale(2),
   },
   photoPlaceholderText: {
     fontSize: theme.fontSize.xs,

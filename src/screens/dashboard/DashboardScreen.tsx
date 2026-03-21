@@ -182,7 +182,7 @@ export const DashboardScreen: React.FC = () => {
       </Animated.View>
 
       {/* Quick Actions */}
-      <Animated.View entering={FadeInDown.delay(600).duration(500)}>
+      {/* <Animated.View entering={FadeInDown.delay(600).duration(500)}>
         <GlassCard style={styles.actionsCard}>
           <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
           <View style={styles.actionsRow}>
@@ -208,7 +208,7 @@ export const DashboardScreen: React.FC = () => {
             />
           </View>
         </GlassCard>
-      </Animated.View>
+      </Animated.View> */}
 
       {/* Goal Editor Modal */}
       <Modal visible={showGoalModal} transparent animationType="fade">
@@ -436,7 +436,7 @@ const qaStyles = StyleSheet.create((theme) => ({
     backgroundColor: theme.colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: 6,
+    marginBottom: moderateScale(6),
   },
   label: {
     fontSize: theme.fontSize.xs,
@@ -457,12 +457,12 @@ const bmiStyles = StyleSheet.create((theme) => ({
     letterSpacing: 1,
     fontWeight: "600",
     color: theme.colors.textSecondary,
-    marginBottom: 4,
+    marginBottom: moderateScale(4),
   },
   hint: {
     fontSize: theme.fontSize.caption,
     color: theme.colors.textTertiary,
-    lineHeight: 18,
+    lineHeight: moderateScale(18),
   },
   row: {
     flexDirection: "row",
@@ -482,7 +482,7 @@ const bmiStyles = StyleSheet.create((theme) => ({
   },
   badge: {
     paddingHorizontal: theme.spacing.sm,
-    paddingVertical: 3,
+    paddingVertical: moderateScale(3),
     borderRadius: theme.borderRadius.round,
   },
   badgeText: {
@@ -498,10 +498,10 @@ const bmiStyles = StyleSheet.create((theme) => ({
   },
   scaleBar: {
     flexDirection: "row",
-    height: 6,
-    borderRadius: 3,
+    height: moderateScale(6),
+    borderRadius: moderateScale(3),
     overflow: "hidden",
-    marginBottom: 4,
+    marginBottom: moderateScale(4),
   },
   scaleSegment: {
     height: "100%",
@@ -540,7 +540,7 @@ const styles = StyleSheet.create((theme) => ({
   greeting: {
     fontSize: theme.fontSize.caption,
     color: theme.colors.textSecondary,
-    marginBottom: 2,
+    marginBottom: moderateScale(2),
   },
   title: {
     fontSize: theme.fontSize.xxl,
@@ -576,7 +576,7 @@ const styles = StyleSheet.create((theme) => ({
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    gap: 8,
+    gap: moderateScale(8),
   },
   ringItem: {
     alignItems: "center",
@@ -593,7 +593,7 @@ const styles = StyleSheet.create((theme) => ({
     letterSpacing: 1,
     fontWeight: "600",
     color: theme.colors.textTertiary,
-    marginTop: -2,
+    marginTop: moderateScale(-2),
   },
   // Goal card
   goalCard: {
