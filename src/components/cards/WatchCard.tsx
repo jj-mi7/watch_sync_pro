@@ -1,8 +1,8 @@
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import type { ConnectionStatus } from "@/types";
 import type React from "react";
-import { Image, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
+import { Image, Text, TouchableOpacity, View, type ViewStyle } from "react-native";
 import Animated, { FadeInUp } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 interface WatchCardProps {
   watchName: string;
@@ -14,12 +14,18 @@ interface WatchCardProps {
   style?: ViewStyle;
 }
 
-const statusConfig: Record<ConnectionStatus, { label: string; color: string }> = {
-  disconnected: { label: "DISCONNECTED", color: Colors.error },
-  scanning: { label: "SCANNING...", color: Colors.warning },
-  connecting: { label: "CONNECTING...", color: Colors.warning },
-  connected: { label: "CONNECTED", color: Colors.success },
-  syncing: { label: "SYNCING...", color: Colors.info },
+const getStatusConfig = (
+  status: ConnectionStatus,
+  theme: ReturnType<typeof useUnistyles>["theme"],
+) => {
+  const map: Record<ConnectionStatus, { label: string; color: string }> = {
+    disconnected: { label: "DISCONNECTED", color: theme.colors.error },
+    scanning: { label: "SCANNING...", color: theme.colors.warning },
+    connecting: { label: "CONNECTING...", color: theme.colors.warning },
+    connected: { label: "CONNECTED", color: theme.colors.success },
+    syncing: { label: "SYNCING...", color: theme.colors.info },
+  };
+  return map[status];
 };
 
 export const WatchCard: React.FC<WatchCardProps> = ({
@@ -31,7 +37,8 @@ export const WatchCard: React.FC<WatchCardProps> = ({
   onPress,
   style,
 }) => {
-  const status = statusConfig[connectionStatus];
+  const { theme } = useUnistyles();
+  const status = getStatusConfig(connectionStatus, theme);
 
   return (
     <Animated.View entering={FadeInUp.duration(500)}>
@@ -68,10 +75,10 @@ export const WatchCard: React.FC<WatchCardProps> = ({
                 width: `${Math.min(batteryLevel, 100)}%`,
                 backgroundColor:
                   batteryLevel > 50
-                    ? Colors.success
+                    ? theme.colors.success
                     : batteryLevel > 20
-                      ? Colors.warning
-                      : Colors.error,
+                      ? theme.colors.warning
+                      : theme.colors.error,
               },
             ]}
           />
@@ -81,14 +88,14 @@ export const WatchCard: React.FC<WatchCardProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xxl,
-    padding: Spacing.xl,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xxl,
+    padding: theme.spacing.xl,
     borderWidth: 1,
-    borderColor: Colors.surfaceLight,
-    shadowColor: Colors.primary,
+    borderColor: theme.colors.surfaceLight,
+    shadowColor: theme.colors.primary,
     shadowOffset: { width: 0, height: 0 },
     shadowOpacity: 0.1,
     shadowRadius: 20,
@@ -103,8 +110,8 @@ const styles = StyleSheet.create({
     height: 72,
     borderRadius: 20,
     overflow: "hidden",
-    marginRight: Spacing.lg,
-    backgroundColor: Colors.surfaceLight,
+    marginRight: theme.spacing.lg,
+    backgroundColor: theme.colors.surfaceLight,
   },
   watchImage: {
     width: 72,
@@ -116,17 +123,18 @@ const styles = StyleSheet.create({
     height: 72,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceLight,
   },
   placeholderIcon: {
-    fontSize: 32,
+    fontSize: theme.fontSize.stat,
   },
   info: {
     flex: 1,
   },
   watchName: {
-    ...Typography.h3,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.lg,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   statusRow: {
@@ -141,26 +149,27 @@ const styles = StyleSheet.create({
     marginRight: 6,
   },
   statusText: {
-    ...Typography.label,
-    fontSize: 10,
+    fontSize: theme.fontSize.sm,
+    fontWeight: "600",
+    letterSpacing: 1,
   },
   metaRow: {
     flexDirection: "row",
     gap: 12,
   },
   metaText: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
   },
   batteryBar: {
     height: 3,
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceLight,
     borderRadius: 2,
-    marginTop: Spacing.md,
+    marginTop: theme.spacing.md,
     overflow: "hidden",
   },
   batteryFill: {
     height: 3,
     borderRadius: 2,
   },
-});
+}));

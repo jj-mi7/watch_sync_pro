@@ -2,17 +2,18 @@ import { GlassCard } from "@/components/cards/GlassCard";
 import { HealthChart } from "@/components/charts/HealthChart";
 import { AnimatedRing } from "@/components/common/AnimatedRing";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { Colors, Spacing, Typography } from "@/constants";
 import type { RootState } from "@/redux/store";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useSelector } from "react-redux";
 
 const DAYS_LABEL_7 = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const DistanceScreen: React.FC = () => {
+  const { theme } = useUnistyles();
   const { todayDistanceKm, history } = useSelector((state: RootState) => state.health);
   const { dailyDistanceGoalKm, units } = useSelector((state: RootState) => state.settings);
   const [chartRange, setChartRange] = useState<"week" | "month">("week");
@@ -51,7 +52,12 @@ export const DistanceScreen: React.FC = () => {
       </Animated.View>
 
       <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.heroSection}>
-        <AnimatedRing progress={progress} size={180} strokeWidth={12} color={Colors.chartGreen}>
+        <AnimatedRing
+          progress={progress}
+          size={180}
+          strokeWidth={12}
+          color={theme.colors.chartGreen}
+        >
           <Text style={styles.heroValue}>{displayDistance.toFixed(1)}</Text>
           <Text style={styles.heroLabel}>{unitLabel.toUpperCase()} WALKED</Text>
           <Text style={styles.heroGoal}>
@@ -63,7 +69,7 @@ export const DistanceScreen: React.FC = () => {
       <HealthChart
         data={chartData}
         labels={chartLabels}
-        color={Colors.chartGreen}
+        color={theme.colors.chartGreen}
         title="DISTANCE HISTORY"
         unit={unitLabel}
         activeRange={chartRange}
@@ -71,7 +77,7 @@ export const DistanceScreen: React.FC = () => {
       />
 
       <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard glowColor={Colors.chartGreen} style={styles.infoCard}>
+        <GlassCard glowColor={theme.colors.chartGreen} style={styles.infoCard}>
           <Text style={styles.sectionLabel}>DISTANCE BREAKDOWN</Text>
           <View style={styles.breakdownRow}>
             <BreakdownItem label="AVG STRIDE" value="~70 cm" />
@@ -84,50 +90,60 @@ export const DistanceScreen: React.FC = () => {
   );
 };
 
-const BreakdownItem: React.FC<{ label: string; value: string }> = ({ label, value }) => (
-  <View style={styles.breakdownItem}>
-    <Text style={styles.breakdownLabel}>{label}</Text>
-    <Text style={styles.breakdownValue}>{value}</Text>
-  </View>
-);
+const BreakdownItem: React.FC<{ label: string; value: string }> = ({ label, value }) => {
+  const { theme } = useUnistyles();
+  return (
+    <View style={styles.breakdownItem}>
+      <Text style={styles.breakdownLabel}>{label}</Text>
+      <Text style={styles.breakdownValue}>{value}</Text>
+    </View>
+  );
+};
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   header: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   title: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.xxl,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   heroSection: {
     alignItems: "center",
-    marginBottom: Spacing.xxl,
+    marginBottom: theme.spacing.xxl,
   },
   heroValue: {
-    ...Typography.hero,
-    color: Colors.textPrimary,
-    fontSize: 32,
+    fontSize: theme.fontSize.hero,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   heroLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
     marginTop: -2,
   },
   heroGoal: {
-    ...Typography.caption,
-    color: Colors.chartGreen,
-    fontSize: 10,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.chartGreen,
     marginTop: 2,
   },
   sectionLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
   },
   infoCard: {
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.xl,
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   breakdownRow: {
     flexDirection: "row",
@@ -138,14 +154,16 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   breakdownLabel: {
-    ...Typography.label,
-    color: Colors.textTertiary,
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textTertiary,
     marginBottom: 4,
   },
   breakdownValue: {
-    ...Typography.caption,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textPrimary,
     fontWeight: "700",
   },
-});
+}));

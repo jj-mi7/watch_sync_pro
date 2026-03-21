@@ -1,7 +1,7 @@
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import type React from "react";
-import { StyleSheet, Text, TouchableOpacity, type ViewStyle } from "react-native";
+import { Text, TouchableOpacity, type ViewStyle } from "react-native";
 import Animated, { useAnimatedStyle, useSharedValue, withSpring } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 interface NeoButtonProps {
   title: string;
@@ -18,12 +18,15 @@ const AnimatedTouchable = Animated.createAnimatedComponent(TouchableOpacity);
 export const NeoButton: React.FC<NeoButtonProps> = ({
   title,
   onPress,
-  color = Colors.primary,
+  color,
   variant = "filled",
   disabled = false,
   style,
   size = "md",
 }) => {
+  const { theme } = useUnistyles();
+  const activeColor = color || theme.colors.primary;
+
   const scale = useSharedValue(1);
 
   const animatedStyle = useAnimatedStyle(() => ({
@@ -39,14 +42,15 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
   };
 
   const sizeStyles = {
-    sm: { height: 40, paddingHorizontal: Spacing.lg },
-    md: { height: 52, paddingHorizontal: Spacing.xl },
-    lg: { height: 60, paddingHorizontal: Spacing.xxl },
+    sm: { height: 40, paddingHorizontal: theme.spacing.lg },
+    md: { height: 52, paddingHorizontal: theme.spacing.xl },
+    lg: { height: 60, paddingHorizontal: theme.spacing.xxl },
   };
 
-  const bgColor = variant === "filled" ? color : "transparent";
-  const borderColor = variant === "outline" ? color : "transparent";
-  const textColor = variant === "ghost" ? color : variant === "outline" ? color : "#000";
+  const bgColor = variant === "filled" ? activeColor : "transparent";
+  const borderColor = variant === "outline" ? activeColor : "transparent";
+  const textColor =
+    variant === "ghost" ? activeColor : variant === "outline" ? activeColor : "#000";
 
   return (
     <AnimatedTouchable
@@ -63,7 +67,7 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
           borderColor,
           borderWidth: variant === "outline" ? 1.5 : 0,
           opacity: disabled ? 0.5 : 1,
-          shadowColor: variant === "filled" ? color : "transparent",
+          shadowColor: variant === "filled" ? activeColor : "transparent",
         },
         animatedStyle,
         style,
@@ -81,9 +85,9 @@ export const NeoButton: React.FC<NeoButtonProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   button: {
-    borderRadius: BorderRadius.round,
+    borderRadius: theme.borderRadius.round,
     justifyContent: "center",
     alignItems: "center",
     shadowOffset: { width: 0, height: 4 },
@@ -96,4 +100,4 @@ const styles = StyleSheet.create({
     letterSpacing: 1,
     textTransform: "uppercase",
   },
-});
+}));

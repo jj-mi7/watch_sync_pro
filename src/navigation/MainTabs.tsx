@@ -1,4 +1,3 @@
-import { Colors, Spacing, Typography } from "@/constants";
 import { DashboardScreen } from "@/screens/dashboard/DashboardScreen";
 import { SyncScreen } from "@/screens/device/SyncScreen";
 import { WatchProfileScreen } from "@/screens/device/WatchProfileScreen";
@@ -10,7 +9,8 @@ import { StepsScreen } from "@/screens/tracking/StepsScreen";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import type React from "react";
-import { StyleSheet, Text, View } from "react-native";
+import { Text, View } from "react-native";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 const Tab = createBottomTabNavigator();
 const DeviceStack = createNativeStackNavigator();
@@ -45,18 +45,18 @@ const TabIcon: React.FC<{ icon: string; label: string; focused: boolean; color: 
   </View>
 );
 
-const tabStyles = StyleSheet.create({
+const tabStyles = StyleSheet.create((theme) => ({
   iconContainer: {
     alignItems: "center",
     justifyContent: "center",
     paddingTop: 6,
   },
   icon: {
-    fontSize: 22,
+    fontSize: theme.fontSize.lg,
     marginBottom: 2,
   },
   label: {
-    fontSize: 10,
+    fontSize: theme.fontSize.xs,
     fontWeight: "700",
     letterSpacing: 0.5,
   },
@@ -66,24 +66,26 @@ const tabStyles = StyleSheet.create({
     borderRadius: 2,
     marginTop: 4,
   },
-});
+}));
 
 export const MainTabs: React.FC = () => {
+  const { theme } = useUnistyles();
+
   return (
     <Tab.Navigator
       screenOptions={{
         headerShown: false,
         tabBarStyle: {
-          backgroundColor: Colors.tabBarBg,
+          backgroundColor: theme.colors.tabBarBg,
           borderTopWidth: 1,
-          borderTopColor: Colors.surfaceLight,
+          borderTopColor: theme.colors.surfaceLight,
           height: 70,
           paddingBottom: 8,
           paddingTop: 4,
         },
         tabBarShowLabel: false,
-        tabBarActiveTintColor: Colors.primary,
-        tabBarInactiveTintColor: Colors.textDisabled,
+        tabBarActiveTintColor: theme.colors.primary,
+        tabBarInactiveTintColor: theme.colors.textDisabled,
       }}
     >
       <Tab.Screen

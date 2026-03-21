@@ -1,7 +1,7 @@
-import { Colors, Spacing } from "@/constants";
 import type React from "react";
-import { ScrollView, StatusBar, StyleSheet, View, type ViewStyle } from "react-native";
+import { ScrollView, StatusBar, View, type ViewStyle } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 interface ScreenWrapperProps {
   children: React.ReactNode;
@@ -17,13 +17,17 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   padded = true,
 }) => {
   const insets = useSafeAreaInsets();
+  const { theme } = useUnistyles();
 
   const content = (
     <View
       style={[
         styles.inner,
         padded && styles.padded,
-        { paddingTop: insets.top + Spacing.md, paddingBottom: insets.bottom + Spacing.xl },
+        {
+          paddingTop: insets.top + theme.spacing.md,
+          paddingBottom: insets.bottom + theme.spacing.xl,
+        },
         style,
       ]}
     >
@@ -33,7 +37,7 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
 
   return (
     <View style={styles.container}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+      <StatusBar barStyle="light-content" backgroundColor={theme.colors.background} />
       {scrollable ? (
         <ScrollView
           style={styles.container}
@@ -50,10 +54,10 @@ export const ScreenWrapper: React.FC<ScreenWrapperProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: theme.colors.background,
   },
   scrollContent: {
     flexGrow: 1,
@@ -62,6 +66,6 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   padded: {
-    paddingHorizontal: Spacing.xl,
+    paddingHorizontal: theme.spacing.xl,
   },
-});
+}));

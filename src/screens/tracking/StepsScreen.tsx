@@ -3,18 +3,19 @@ import { HealthChart } from "@/components/charts/HealthChart";
 import { AnimatedRing } from "@/components/common/AnimatedRing";
 import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import { setDailyStepGoal } from "@/redux/slices/settingsSlice";
 import type { RootState } from "@/redux/store";
 import type React from "react";
 import { useMemo, useState } from "react";
-import { Modal, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Modal, Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
 
 const DAYS_LABEL_7 = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
 
 export const StepsScreen: React.FC = () => {
+  const { theme } = useUnistyles();
   const dispatch = useDispatch();
   const { todaySteps, history } = useSelector((state: RootState) => state.health);
   const { dailyStepGoal } = useSelector((state: RootState) => state.settings);
@@ -55,7 +56,12 @@ export const StepsScreen: React.FC = () => {
 
       {/* Hero Ring */}
       <Animated.View entering={FadeInDown.delay(100).duration(500)} style={styles.heroSection}>
-        <AnimatedRing progress={progress} size={180} strokeWidth={12} color={Colors.chartCyan}>
+        <AnimatedRing
+          progress={progress}
+          size={180}
+          strokeWidth={12}
+          color={theme.colors.chartCyan}
+        >
           <Text style={styles.heroValue}>{todaySteps.toLocaleString()}</Text>
           <Text style={styles.heroLabel}>STEPS TODAY</Text>
           <Text style={styles.heroGoal}>
@@ -68,7 +74,7 @@ export const StepsScreen: React.FC = () => {
       <HealthChart
         data={chartData}
         labels={chartLabels}
-        color={Colors.chartCyan}
+        color={theme.colors.chartCyan}
         title="STEP HISTORY"
         unit="steps"
         activeRange={chartRange}
@@ -77,9 +83,10 @@ export const StepsScreen: React.FC = () => {
 
       {/* Daily Log */}
       <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-        <GlassCard glowColor={Colors.chartCyan} style={styles.logCard}>
+        <GlassCard glowColor={theme.colors.chartCyan} style={styles.logCard}>
           <Text style={styles.sectionLabel}>RECENT LOG</Text>
           {(history.length > 0 ? history.slice(-7).reverse() : demoLog()).map((record, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: array is static
             <View key={i} style={styles.logRow}>
               <Text style={styles.logDate}>{formatDate(record.date)}</Text>
               <View style={styles.logBarContainer}>
@@ -89,7 +96,9 @@ export const StepsScreen: React.FC = () => {
                     {
                       width: `${Math.min((record.steps / dailyStepGoal) * 100, 100)}%`,
                       backgroundColor:
-                        record.steps >= dailyStepGoal ? Colors.success : Colors.chartCyan,
+                        record.steps >= dailyStepGoal
+                          ? theme.colors.success
+                          : theme.colors.chartCyan,
                     },
                   ]}
                 />
@@ -103,7 +112,7 @@ export const StepsScreen: React.FC = () => {
       {/* Goal Setter Modal */}
       <Modal visible={showGoalModal} transparent animationType="fade">
         <View style={styles.modalOverlay}>
-          <GlassCard glowColor={Colors.primary} style={styles.modalCard}>
+          <GlassCard glowColor={theme.colors.primary} style={styles.modalCard}>
             <Text style={styles.modalTitle}>Set Daily Step Goal</Text>
             <View style={styles.goalPresets}>
               {goalPresets.map((preset) => (
@@ -112,14 +121,17 @@ export const StepsScreen: React.FC = () => {
                   style={[
                     styles.presetBtn,
                     tempGoal === preset && {
-                      backgroundColor: Colors.primaryGlow,
-                      borderColor: Colors.primary,
+                      backgroundColor: theme.colors.primaryGlow,
+                      borderColor: theme.colors.primary,
                     },
                   ]}
                   onPress={() => setTempGoal(preset)}
                 >
                   <Text
-                    style={[styles.presetText, tempGoal === preset && { color: Colors.primary }]}
+                    style={[
+                      styles.presetText,
+                      tempGoal === preset && { color: theme.colors.primary },
+                    ]}
                   >
                     {preset.toLocaleString()}
                   </Text>
@@ -133,17 +145,17 @@ export const StepsScreen: React.FC = () => {
                 dispatch(setDailyStepGoal(tempGoal));
                 setShowGoalModal(false);
               }}
-              color={Colors.primary}
+              color={theme.colors.primary}
               size="md"
-              style={{ marginTop: Spacing.lg }}
+              style={{ marginTop: theme.spacing.lg }}
             />
             <NeoButton
               title="CANCEL"
               onPress={() => setShowGoalModal(false)}
               variant="ghost"
-              color={Colors.textTertiary}
+              color={theme.colors.textTertiary}
               size="sm"
-              style={{ marginTop: Spacing.sm }}
+              style={{ marginTop: theme.spacing.sm }}
             />
           </GlassCard>
         </View>
@@ -169,76 +181,85 @@ function formatDate(dateStr: string): string {
   }
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   title: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.xxl,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   goalBadge: {
-    backgroundColor: Colors.primaryGlow,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.round,
+    backgroundColor: theme.colors.primaryGlow,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.round,
     borderWidth: 1,
-    borderColor: `${Colors.primary}40`,
+    borderColor: `${theme.colors.primary}40`,
   },
   goalBadgeText: {
-    ...Typography.label,
-    color: Colors.primary,
-    fontSize: 10,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.primary,
   },
   heroSection: {
     alignItems: "center",
-    marginBottom: Spacing.xxl,
+    marginBottom: theme.spacing.xxl,
   },
   heroValue: {
-    ...Typography.hero,
-    color: Colors.textPrimary,
-    fontSize: 32,
+    fontSize: theme.fontSize.hero,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   heroLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    fontSize: 9,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
     marginTop: -2,
   },
   heroGoal: {
-    ...Typography.caption,
-    color: Colors.chartCyan,
-    fontSize: 10,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.chartCyan,
     marginTop: 2,
   },
   sectionLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
   },
   logCard: {
-    marginTop: Spacing.xl,
-    marginBottom: Spacing.xl,
+    marginTop: theme.spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   logRow: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: Spacing.sm,
+    marginBottom: theme.spacing.sm,
   },
   logDate: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
     width: 60,
   },
   logBarContainer: {
     flex: 1,
     height: 6,
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceLight,
     borderRadius: 3,
-    marginHorizontal: Spacing.sm,
+    marginHorizontal: theme.spacing.sm,
     overflow: "hidden",
   },
   logBar: {
@@ -246,8 +267,8 @@ const styles = StyleSheet.create({
     borderRadius: 3,
   },
   logSteps: {
-    ...Typography.caption,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textPrimary,
     width: 52,
     textAlign: "right",
     fontWeight: "700",
@@ -255,40 +276,44 @@ const styles = StyleSheet.create({
   // Modal
   modalOverlay: {
     flex: 1,
-    backgroundColor: Colors.overlay,
+    backgroundColor: theme.colors.overlay,
     justifyContent: "center",
-    paddingHorizontal: Spacing.xxl,
+    paddingHorizontal: theme.spacing.xxl,
   },
   modalCard: {},
   modalTitle: {
-    ...Typography.h2,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xl,
+    fontSize: theme.fontSize.xl,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xl,
     textAlign: "center",
   },
   goalPresets: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "center",
-    gap: Spacing.sm,
-    marginBottom: Spacing.lg,
+    gap: theme.spacing.sm,
+    marginBottom: theme.spacing.lg,
   },
   presetBtn: {
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.round,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.round,
     borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
-    backgroundColor: Colors.surfaceLight,
+    borderColor: theme.colors.surfaceBorder,
+    backgroundColor: theme.colors.surfaceLight,
   },
   presetText: {
-    ...Typography.caption,
-    color: Colors.textSecondary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textSecondary,
     fontWeight: "700",
   },
   selectedGoal: {
-    ...Typography.h3,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.lg,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    color: theme.colors.textPrimary,
     textAlign: "center",
   },
-});
+}));

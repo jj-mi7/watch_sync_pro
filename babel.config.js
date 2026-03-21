@@ -11,6 +11,9 @@ module.exports = {
         extensions: ['.ts', '.tsx', '.js', '.jsx', '.json'],
       },
     ],
+    ['react-native-unistyles/plugin', {
+      root: 'src',
+    }],
     'react-native-reanimated/plugin',
   ],
 };

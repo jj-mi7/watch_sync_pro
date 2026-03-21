@@ -1,8 +1,8 @@
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import React, { useMemo } from "react";
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Dimensions, Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeIn } from "react-native-reanimated";
 import Svg, { Rect, Line, Text as SvgText } from "react-native-svg";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 
@@ -19,12 +19,15 @@ interface HealthChartProps {
 export const HealthChart: React.FC<HealthChartProps> = ({
   data,
   labels,
-  color = Colors.chartCyan,
+  color,
   title,
   unit,
   activeRange,
   onRangeChange,
 }) => {
+  const { theme } = useUnistyles();
+  const activeColor = color || theme.colors.chartCyan;
+
   const chartWidth = SCREEN_WIDTH - 80;
   const chartHeight = 160;
   const barPadding = 4;
@@ -44,9 +47,12 @@ export const HealthChart: React.FC<HealthChartProps> = ({
             <TouchableOpacity
               key={range}
               onPress={() => onRangeChange?.(range)}
-              style={[styles.rangeBtn, activeRange === range && { backgroundColor: `${color}30` }]}
+              style={[
+                styles.rangeBtn,
+                activeRange === range && { backgroundColor: `${activeColor}30` },
+              ]}
             >
-              <Text style={[styles.rangeText, activeRange === range && { color }]}>
+              <Text style={[styles.rangeText, activeRange === range && { color: activeColor }]}>
                 {range === "week" ? "7D" : "30D"}
               </Text>
             </TouchableOpacity>
@@ -64,7 +70,7 @@ export const HealthChart: React.FC<HealthChartProps> = ({
               y1={chartHeight * (1 - pct)}
               x2={chartWidth}
               y2={chartHeight * (1 - pct)}
-              stroke={Colors.surfaceLight}
+              stroke={theme.colors.surfaceLight}
               strokeWidth={0.5}
               strokeDasharray="4,4"
             />
@@ -77,6 +83,7 @@ export const HealthChart: React.FC<HealthChartProps> = ({
             const y = chartHeight - barHeight;
 
             return (
+              // biome-ignore lint/suspicious/noArrayIndexKey: order and length are static per duration
               <React.Fragment key={i}>
                 <Rect
                   x={x}
@@ -84,15 +91,15 @@ export const HealthChart: React.FC<HealthChartProps> = ({
                   width={barWidth}
                   height={Math.max(barHeight, 2)}
                   rx={barWidth / 2 > 6 ? 6 : barWidth / 2}
-                  fill={color}
+                  fill={activeColor}
                   opacity={0.85}
                 />
                 {/* Label */}
                 <SvgText
                   x={x + barWidth / 2}
                   y={chartHeight + 16}
-                  fill={Colors.textTertiary}
-                  fontSize={9}
+                  fill={theme.colors.textTertiary}
+                  fontSize={theme.fontSize.xs}
                   fontWeight="600"
                   textAnchor="middle"
                 >
@@ -107,13 +114,13 @@ export const HealthChart: React.FC<HealthChartProps> = ({
       <View style={styles.summaryRow}>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>TOTAL</Text>
-          <Text style={[styles.summaryValue, { color }]}>
+          <Text style={[styles.summaryValue, { color: activeColor }]}>
             {data.reduce((a, b) => a + b, 0).toLocaleString()} {unit}
           </Text>
         </View>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>AVG</Text>
-          <Text style={[styles.summaryValue, { color }]}>
+          <Text style={[styles.summaryValue, { color: activeColor }]}>
             {data.length > 0
               ? Math.round(data.reduce((a, b) => a + b, 0) / data.length).toLocaleString()
               : 0}{" "}
@@ -122,7 +129,7 @@ export const HealthChart: React.FC<HealthChartProps> = ({
         </View>
         <View style={styles.summaryItem}>
           <Text style={styles.summaryLabel}>BEST</Text>
-          <Text style={[styles.summaryValue, { color }]}>
+          <Text style={[styles.summaryValue, { color: activeColor }]}>
             {Math.max(...data, 0).toLocaleString()} {unit}
           </Text>
         </View>
@@ -131,62 +138,68 @@ export const HealthChart: React.FC<HealthChartProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   container: {
-    backgroundColor: Colors.surface,
-    borderRadius: BorderRadius.xl,
-    padding: Spacing.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.xl,
+    padding: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: Colors.surfaceLight,
+    borderColor: theme.colors.surfaceLight,
   },
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: theme.spacing.md,
   },
   title: {
-    ...Typography.label,
-    color: Colors.textSecondary,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
   },
   rangeToggle: {
     flexDirection: "row",
-    backgroundColor: Colors.surfaceLight,
-    borderRadius: BorderRadius.sm,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.sm,
     padding: 2,
   },
   rangeBtn: {
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.xs,
-    borderRadius: BorderRadius.sm - 2,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.xs,
+    borderRadius: theme.borderRadius.sm - 2,
   },
   rangeText: {
-    ...Typography.label,
-    fontSize: 10,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.sm,
+    color: theme.colors.textTertiary,
+    fontWeight: "600",
+    letterSpacing: 1,
   },
   chartContainer: {
     alignItems: "center",
-    marginBottom: Spacing.md,
+    marginBottom: theme.spacing.md,
   },
   summaryRow: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingTop: Spacing.md,
+    paddingTop: theme.spacing.md,
     borderTopWidth: 1,
-    borderTopColor: Colors.surfaceLight,
+    borderTopColor: theme.colors.surfaceLight,
   },
   summaryItem: {
     alignItems: "center",
   },
   summaryLabel: {
-    ...Typography.label,
-    fontSize: 9,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.xs,
+    color: theme.colors.textTertiary,
     marginBottom: 2,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
   },
   summaryValue: {
-    ...Typography.caption,
+    fontSize: theme.fontSize.caption,
     fontWeight: "800",
   },
-});
+}));

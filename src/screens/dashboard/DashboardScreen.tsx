@@ -3,16 +3,17 @@ import { StatCard } from "@/components/cards/StatCard";
 import { WatchCard } from "@/components/cards/WatchCard";
 import { AnimatedRing } from "@/components/common/AnimatedRing";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import type { RootState } from "@/redux/store";
 import { useNavigation } from "@react-navigation/native";
 import type React from "react";
 import { useMemo } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Text, TouchableOpacity, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useSelector } from "react-redux";
 
 export const DashboardScreen: React.FC = () => {
+  const { theme } = useUnistyles();
   const navigation = useNavigation<any>();
   const { device, connectionStatus } = useSelector((state: RootState) => state.device);
   const { todaySteps, todayCalories, todayDistanceKm } = useSelector(
@@ -64,12 +65,12 @@ export const DashboardScreen: React.FC = () => {
 
       {/* Progress Rings */}
       <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-        <GlassCard glowColor={Colors.primary} style={styles.ringsCard}>
+        <GlassCard glowColor={theme.colors.primary} style={styles.ringsCard}>
           <Text style={styles.sectionLabel}>TODAY'S PROGRESS</Text>
           <View style={styles.ringsRow}>
             {/* Steps Ring */}
             <TouchableOpacity style={styles.ringItem} onPress={() => navigation.navigate("Steps")}>
-              <AnimatedRing progress={stepProgress} size={90} color={Colors.chartCyan}>
+              <AnimatedRing progress={stepProgress} size={90} color={theme.colors.chartCyan}>
                 <Text style={styles.ringValue}>{formatNumber(todaySteps)}</Text>
                 <Text style={styles.ringUnit}>steps</Text>
               </AnimatedRing>
@@ -77,7 +78,7 @@ export const DashboardScreen: React.FC = () => {
 
             {/* Calories Ring */}
             <TouchableOpacity style={styles.ringItem}>
-              <AnimatedRing progress={calProgress} size={90} color={Colors.chartPurple}>
+              <AnimatedRing progress={calProgress} size={90} color={theme.colors.chartPurple}>
                 <Text style={styles.ringValue}>{todayCalories}</Text>
                 <Text style={styles.ringUnit}>cal</Text>
               </AnimatedRing>
@@ -85,7 +86,7 @@ export const DashboardScreen: React.FC = () => {
 
             {/* Distance Ring */}
             <TouchableOpacity style={styles.ringItem}>
-              <AnimatedRing progress={distProgress} size={90} color={Colors.chartGreen}>
+              <AnimatedRing progress={distProgress} size={90} color={theme.colors.chartGreen}>
                 <Text style={styles.ringValue}>{todayDistanceKm}</Text>
                 <Text style={styles.ringUnit}>km</Text>
               </AnimatedRing>
@@ -100,25 +101,25 @@ export const DashboardScreen: React.FC = () => {
           label="STEP GOAL"
           value={formatNumber(dailyStepGoal)}
           icon="🎯"
-          color={Colors.chartCyan}
+          color={theme.colors.chartCyan}
           index={0}
           style={styles.statCardSpacing}
         />
-        <View style={{ width: Spacing.md }} />
+        <View style={{ width: theme.spacing.md }} />
         <StatCard
           label="STREAK"
           value="7d"
           icon="🔥"
-          color={Colors.warning}
+          color={theme.colors.warning}
           index={1}
           style={styles.statCardSpacing}
         />
-        <View style={{ width: Spacing.md }} />
+        <View style={{ width: theme.spacing.md }} />
         <StatCard
           label="RANK"
           value="#3"
           icon="⭐"
-          color={Colors.secondary}
+          color={theme.colors.secondary}
           index={2}
           style={styles.statCardSpacing}
         />
@@ -126,7 +127,7 @@ export const DashboardScreen: React.FC = () => {
 
       {/* Quick Actions */}
       <Animated.View entering={FadeInDown.delay(600).duration(500)}>
-        <GlassCard glowColor={Colors.secondary} style={styles.actionsCard}>
+        <GlassCard glowColor={theme.colors.secondary} style={styles.actionsCard}>
           <Text style={styles.sectionLabel}>QUICK ACTIONS</Text>
           <View style={styles.actionsRow}>
             <QuickAction
@@ -165,7 +166,7 @@ const QuickAction: React.FC<{ icon: string; label: string; onPress: () => void }
   </TouchableOpacity>
 );
 
-const qaStyles = StyleSheet.create({
+const qaStyles = StyleSheet.create((theme) => ({
   action: {
     alignItems: "center",
     flex: 1,
@@ -174,7 +175,7 @@ const qaStyles = StyleSheet.create({
     width: 44,
     height: 44,
     borderRadius: 14,
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 6,
@@ -183,11 +184,13 @@ const qaStyles = StyleSheet.create({
     fontSize: 20,
   },
   label: {
-    ...Typography.label,
-    fontSize: 9,
-    color: Colors.textSecondary,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
   },
-});
+}));
 
 // Helpers
 function getGreeting(): string {
@@ -202,45 +205,52 @@ function formatNumber(n: number): string {
   return n.toString();
 }
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   greeting: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
     marginBottom: 2,
   },
   title: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.xxl,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   syncBadge: {
-    backgroundColor: Colors.primaryGlow,
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.round,
+    backgroundColor: theme.colors.primaryGlow,
+    paddingHorizontal: theme.spacing.md,
+    paddingVertical: theme.spacing.sm,
+    borderRadius: theme.borderRadius.round,
     borderWidth: 1,
-    borderColor: `${Colors.primary}40`,
+    borderColor: `${theme.colors.primary}40`,
   },
   syncBadgeText: {
-    ...Typography.label,
-    color: Colors.primary,
-    fontSize: 10,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.primary,
   },
   watchCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   ringsCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   sectionLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.lg,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.lg,
   },
   ringsRow: {
     flexDirection: "row",
@@ -251,26 +261,28 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
   ringValue: {
-    ...Typography.bodyBold,
-    color: Colors.textPrimary,
-    fontSize: 16,
+    fontSize: theme.fontSize.md,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
   },
   ringUnit: {
-    ...Typography.label,
-    color: Colors.textTertiary,
-    fontSize: 8,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textTertiary,
     marginTop: -2,
   },
   statsRow: {
     flexDirection: "row",
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   statCardSpacing: {},
   actionsCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   actionsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
   },
-});
+}));

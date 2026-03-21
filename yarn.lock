@@ -995,7 +995,7 @@
     "@babel/types" "^7.29.0"
     debug "^4.3.1"
 
-"@babel/types@^7.0.0", "@babel/types@^7.20.7", "@babel/types@^7.27.1", "@babel/types@^7.27.3", "@babel/types@^7.28.2", "@babel/types@^7.28.5", "@babel/types@^7.28.6", "@babel/types@^7.29.0", "@babel/types@^7.3.3", "@babel/types@^7.4.4":
+"@babel/types@7.29.0", "@babel/types@^7.0.0", "@babel/types@^7.20.7", "@babel/types@^7.27.1", "@babel/types@^7.27.3", "@babel/types@^7.28.2", "@babel/types@^7.28.5", "@babel/types@^7.28.6", "@babel/types@^7.29.0", "@babel/types@^7.3.3", "@babel/types@^7.4.4":
   version "7.29.0"
   resolved "https://registry.yarnpkg.com/@babel/types/-/types-7.29.0.tgz#9f5b1e838c446e72cf3cd4b918152b8c605e37c7"
   integrity sha512-LwdZHpScM4Qz8Xw2iKSzS+cfglZzJGvofQICy7W7v4caru4EaAmyUuO6BGrbyQ2mYV11W0U8j5mBhd14dd3B0A==
@@ -4607,6 +4607,11 @@ react-native-mmkv@^3.2.0:
   resolved "https://registry.yarnpkg.com/react-native-mmkv/-/react-native-mmkv-3.3.3.tgz#1f0326f6314e23725af8145964343224d074e6cd"
   integrity sha512-GMsfOmNzx0p5+CtrCFRVtpOOMYNJXuksBVARSQrCFaZwjUyHJdQzcN900GGaFFNTxw2fs8s5Xje//RDKj9+PZA==
 
+react-native-nitro-modules@^0.35.2:
+  version "0.35.2"
+  resolved "https://registry.yarnpkg.com/react-native-nitro-modules/-/react-native-nitro-modules-0.35.2.tgz#75fbcd42a73d93540c0069d42098d9dc6c12ea7e"
+  integrity sha512-97cZcCh3ZAuWAfutel2Q3qLfc45XXh7F9Ei5tEjahP0kV3q8hQelwLIulKXmjN+f0JI5Zf/wCsfwwdVWYU2tKA==
+
 react-native-reanimated@^3.17.4:
   version "3.19.5"
   resolved "https://registry.yarnpkg.com/react-native-reanimated/-/react-native-reanimated-3.19.5.tgz#e19239732a4b422cee272c76e6dfedd3b50ea822"
@@ -4638,6 +4643,11 @@ react-native-screens@^4.10.0:
     react-freeze "^1.0.0"
     warn-once "^0.1.0"
 
+react-native-size-matters@^0.4.2:
+  version "0.4.2"
+  resolved "https://registry.yarnpkg.com/react-native-size-matters/-/react-native-size-matters-0.4.2.tgz#4348bdd6fc47383f60326d58ad69870c998a5f9a"
+  integrity sha512-DKE3f/sdcozd24oASgkP1iGg+YU3HoajRa5k3a4wkRzpiqREq8SGX12Y5zBgAt/8IivLQoTMYkyQu1/Giuy+zQ==
+
 react-native-svg@^15.11.2:
   version "15.15.4"
   resolved "https://registry.yarnpkg.com/react-native-svg/-/react-native-svg-15.15.4.tgz#c029be85c20ead09c63dffa6b1ade06012f095ed"
@@ -4646,6 +4656,20 @@ react-native-svg@^15.11.2:
     css-select "^5.1.0"
     css-tree "^1.1.3"
     warn-once "0.1.1"
+
+react-native-unistyles@^3.1.1:
+  version "3.1.1"
+  resolved "https://registry.yarnpkg.com/react-native-unistyles/-/react-native-unistyles-3.1.1.tgz#4c5de689336613cbbe9ab18905bce59a4aa6b2ee"
+  integrity sha512-i19+hXhuMWOHtDyLks3hF++OtpujPgK0RLlSDhmrnwyGBMjzrtMS9upugeykvgwoWlloJqdGDaBZkkeefpY5fA==
+  dependencies:
+    "@babel/types" "7.29.0"
+
+react-native-worklets-core@^1.6.3:
+  version "1.6.3"
+  resolved "https://registry.yarnpkg.com/react-native-worklets-core/-/react-native-worklets-core-1.6.3.tgz#e95d879b28890bf27f019797aa3d8538532b4f4e"
+  integrity sha512-r3Q40XQBccx/iAI5tlyiua+micvO1UGzzUOskNweZUXyfrrE+rb5aqxqruBPqXf90rO+bBiplylLMEAXCLTyGA==
+  dependencies:
+    string-hash-64 "^1.0.3"
 
 react-native@0.84.1:
   version "0.84.1"
@@ -5088,6 +5112,11 @@ strict-uri-encode@^2.0.0:
   version "2.0.0"
   resolved "https://registry.yarnpkg.com/strict-uri-encode/-/strict-uri-encode-2.0.0.tgz#b9c7330c7042862f6b142dc274bbcc5866ce3546"
   integrity sha512-QwiXZgpRcKkhTj2Scnn++4PKtWsH0kpzZ62L2R6c/LUVYv7hVnZqcg2+sMuT6R7Jusu1vviK/MFsu6kNJfWlEQ==
+
+string-hash-64@^1.0.3:
+  version "1.0.3"
+  resolved "https://registry.yarnpkg.com/string-hash-64/-/string-hash-64-1.0.3.tgz#0deb56df58678640db5c479ccbbb597aaa0de322"
+  integrity sha512-D5OKWKvDhyVWWn2x5Y9b+37NUllks34q1dCDhk/vYcso9fmhs+Tl3KR/gE4v5UNj2UA35cnX4KdVVGkG1deKqw==
 
 string-length@^4.0.1:
   version "4.0.2"

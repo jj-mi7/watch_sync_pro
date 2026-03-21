@@ -1,16 +1,17 @@
 import { GlassCard } from "@/components/cards/GlassCard";
 import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import { setDevice, setWatchPhoto } from "@/redux/slices/deviceSlice";
 import type { RootState } from "@/redux/store";
 import type React from "react";
-import { Alert, Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Text, TouchableOpacity, View } from "react-native";
 import { launchCamera, launchImageLibrary } from "react-native-image-picker";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
 
 export const WatchProfileScreen: React.FC = () => {
+  const { theme } = useUnistyles();
   const dispatch = useDispatch();
   const { device, connectionStatus } = useSelector((state: RootState) => state.device);
 
@@ -63,7 +64,7 @@ export const WatchProfileScreen: React.FC = () => {
 
       {/* Photo Section */}
       <Animated.View entering={FadeInDown.delay(100).duration(500)}>
-        <GlassCard glowColor={Colors.secondary} style={styles.photoCard}>
+        <GlassCard glowColor={theme.colors.secondary} style={styles.photoCard}>
           <TouchableOpacity onPress={handlePickImage} activeOpacity={0.8}>
             <View style={styles.photoContainer}>
               {device?.photoUri ? (
@@ -81,7 +82,7 @@ export const WatchProfileScreen: React.FC = () => {
             title="CHANGE PHOTO"
             onPress={handlePickImage}
             variant="outline"
-            color={Colors.secondary}
+            color={theme.colors.secondary}
             size="md"
             style={styles.changePhotoBtn}
           />
@@ -90,7 +91,7 @@ export const WatchProfileScreen: React.FC = () => {
 
       {/* Device Info */}
       <Animated.View entering={FadeInDown.delay(200).duration(500)}>
-        <GlassCard glowColor={Colors.primary} style={styles.infoCard}>
+        <GlassCard glowColor={theme.colors.primary} style={styles.infoCard}>
           <Text style={styles.sectionLabel}>DEVICE INFORMATION</Text>
 
           <InfoRow label="Model" value={device?.name || "CASIO ABL-100WE"} />
@@ -99,7 +100,9 @@ export const WatchProfileScreen: React.FC = () => {
           <InfoRow
             label="Status"
             value={connectionStatus.toUpperCase()}
-            valueColor={connectionStatus === "connected" ? Colors.success : Colors.textTertiary}
+            valueColor={
+              connectionStatus === "connected" ? theme.colors.success : theme.colors.textTertiary
+            }
           />
           <InfoRow label="Battery" value={`${device?.batteryLevel ?? 85}%`} />
           <InfoRow label="Last Sync" value={device?.lastSyncTime || "Never"} />
@@ -108,7 +111,7 @@ export const WatchProfileScreen: React.FC = () => {
 
       {/* Supported Devices */}
       <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard glowColor={Colors.chartGreen} style={styles.infoCard}>
+        <GlassCard glowColor={theme.colors.chartGreen} style={styles.infoCard}>
           <Text style={styles.sectionLabel}>SUPPORTED DEVICES</Text>
           <Text style={styles.supportText}>Currently supported:</Text>
           <View style={styles.deviceList}>
@@ -127,87 +130,113 @@ const InfoRow: React.FC<{ label: string; value: string; valueColor?: string }> =
   label,
   value,
   valueColor,
-}) => (
-  <View style={infoStyles.row}>
-    <Text style={infoStyles.label}>{label}</Text>
-    <Text style={[infoStyles.value, valueColor ? { color: valueColor } : undefined]}>{value}</Text>
-  </View>
-);
+}) => {
+  const { theme } = useUnistyles();
+  const infoStyles = infoStylesDef(theme);
+  return (
+    <View style={infoStyles.row}>
+      <Text style={infoStyles.label}>{label}</Text>
+      <Text style={[infoStyles.value, valueColor ? { color: valueColor } : undefined]}>
+        {value}
+      </Text>
+    </View>
+  );
+};
 
-const DeviceTag: React.FC<{ name: string; active?: boolean }> = ({ name, active }) => (
-  <View style={[tagStyles.tag, active && tagStyles.activeTag]}>
-    <Text style={[tagStyles.text, active && tagStyles.activeText]}>{name}</Text>
-    {!active && <Text style={tagStyles.soon}>SOON</Text>}
-  </View>
-);
+const DeviceTag: React.FC<{ name: string; active?: boolean }> = ({ name, active }) => {
+  const { theme } = useUnistyles();
+  const tagStyles = tagStylesDef(theme);
+  return (
+    <View style={tagStyles.tag}>
+      <Text style={tagStyles.text}>{name}</Text>
+      {!active && <Text style={tagStyles.soon}>SOON</Text>}
+    </View>
+  );
+};
 
-const infoStyles = StyleSheet.create({
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    paddingVertical: Spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceLight,
-  },
-  label: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
-  },
-  value: {
-    ...Typography.caption,
-    color: Colors.textPrimary,
-    fontWeight: "700",
-  },
-});
+// biome-ignore lint/suspicious/noExplicitAny: generic theme
+const infoStylesDef = (theme: any) =>
+  StyleSheet.create({
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      paddingVertical: theme.spacing.sm,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.colors.surfaceLight,
+    },
+    label: {
+      fontSize: theme.fontSize.caption,
+      color: theme.colors.textTertiary,
+    },
+    value: {
+      fontSize: theme.fontSize.caption,
+      color: theme.colors.textPrimary,
+      fontWeight: "700",
+    },
+  });
 
-const tagStyles = StyleSheet.create({
-  tag: {
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: Spacing.md,
-    paddingVertical: Spacing.sm,
-    borderRadius: BorderRadius.round,
-    backgroundColor: Colors.surfaceLight,
-    borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
-  },
-  activeTag: {
-    borderColor: Colors.success,
-    backgroundColor: `${Colors.success}15`,
-  },
-  text: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
-  },
-  activeText: {
-    color: Colors.success,
-  },
-  soon: {
-    ...Typography.label,
-    fontSize: 8,
-    color: Colors.textDisabled,
-    marginLeft: 6,
-  },
-});
+// biome-ignore lint/suspicious/noExplicitAny: generic theme
+const tagStylesDef = (theme: any) =>
+  StyleSheet.create({
+    tag: {
+      flexDirection: "row",
+      alignItems: "center",
+      paddingHorizontal: theme.spacing.md,
+      paddingVertical: theme.spacing.sm,
+      borderRadius: theme.borderRadius.round,
+      backgroundColor: theme.colors.surfaceLight,
+      borderWidth: 1,
+      borderColor: theme.colors.surfaceBorder,
+      variants: {
+        active: {
+          true: {
+            borderColor: theme.colors.success,
+            backgroundColor: `${theme.colors.success}15`,
+          },
+        },
+      },
+    },
+    text: {
+      fontSize: theme.fontSize.caption,
+      color: theme.colors.textTertiary,
+      variants: {
+        active: {
+          true: {
+            color: theme.colors.success,
+          },
+        },
+      },
+    },
+    soon: {
+      fontSize: theme.fontSize.xs,
+      textTransform: "uppercase",
+      letterSpacing: 1,
+      fontWeight: "600",
+      color: theme.colors.textDisabled,
+      marginLeft: 6,
+    },
+  });
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   header: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   title: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.xxl,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   photoCard: {
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   photoContainer: {
     width: 200,
     height: 200,
     borderRadius: 24,
     overflow: "hidden",
-    marginBottom: Spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   watchPhoto: {
     width: 200,
@@ -217,41 +246,47 @@ const styles = StyleSheet.create({
   photoPlaceholder: {
     width: 200,
     height: 200,
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
     borderWidth: 2,
-    borderColor: Colors.surfaceBorder,
+    borderColor: theme.colors.surfaceBorder,
     borderStyle: "dashed",
     borderRadius: 24,
   },
   photoPlaceholderIcon: {
     fontSize: 48,
-    marginBottom: Spacing.sm,
+    marginBottom: theme.spacing.sm,
   },
   photoPlaceholderText: {
-    ...Typography.label,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textTertiary,
   },
   changePhotoBtn: {
     alignSelf: "stretch",
   },
   sectionLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
   },
   infoCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   supportText: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
-    marginBottom: Spacing.md,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
+    marginBottom: theme.spacing.md,
   },
   deviceList: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: Spacing.sm,
+    gap: theme.spacing.sm,
   },
-});
+}));

@@ -1,6 +1,6 @@
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import type React from "react";
-import { StyleSheet, Text, TextInput, type TextInputProps, View } from "react-native";
+import { Text, TextInput, type TextInputProps, View } from "react-native";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 interface InputProps extends TextInputProps {
   label?: string;
@@ -8,13 +8,15 @@ interface InputProps extends TextInputProps {
 }
 
 export const Input: React.FC<InputProps> = ({ label, error, style, ...rest }) => {
+  const { theme } = useUnistyles();
+
   return (
     <View style={styles.wrapper}>
       {label && <Text style={styles.label}>{label}</Text>}
       <TextInput
         style={[styles.input, error && styles.inputError, style]}
-        placeholderTextColor={Colors.textDisabled}
-        selectionColor={Colors.primary}
+        placeholderTextColor={theme.colors.textDisabled}
+        selectionColor={theme.colors.primary}
         {...rest}
       />
       {error && <Text style={styles.error}>{error}</Text>}
@@ -22,31 +24,34 @@ export const Input: React.FC<InputProps> = ({ label, error, style, ...rest }) =>
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   wrapper: {
-    marginBottom: Spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   label: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.sm,
+    color: theme.colors.textSecondary,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    marginBottom: theme.spacing.sm,
   },
   input: {
-    backgroundColor: Colors.surfaceLight,
-    borderRadius: BorderRadius.lg,
-    paddingHorizontal: Spacing.lg,
-    paddingVertical: Spacing.md,
-    color: Colors.textPrimary,
-    fontSize: 16,
+    backgroundColor: theme.colors.surfaceLight,
+    borderRadius: theme.borderRadius.lg,
+    paddingHorizontal: theme.spacing.lg,
+    paddingVertical: theme.spacing.md,
+    color: theme.colors.textPrimary,
+    fontSize: theme.fontSize.md,
     borderWidth: 1,
-    borderColor: Colors.surfaceBorder,
+    borderColor: theme.colors.surfaceBorder,
   },
   inputError: {
-    borderColor: Colors.error,
+    borderColor: theme.colors.error,
   },
   error: {
-    ...Typography.caption,
-    color: Colors.error,
-    marginTop: Spacing.xs,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.error,
+    marginTop: theme.spacing.xs,
   },
-});
+}));

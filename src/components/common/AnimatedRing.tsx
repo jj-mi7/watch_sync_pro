@@ -1,7 +1,6 @@
-import { Colors } from "@/constants";
 import type React from "react";
 import { useEffect } from "react";
-import { StyleSheet, View } from "react-native";
+import { View } from "react-native";
 import Animated, {
   useSharedValue,
   useAnimatedProps,
@@ -9,6 +8,7 @@ import Animated, {
   Easing,
 } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 
 const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
@@ -25,10 +25,14 @@ export const AnimatedRing: React.FC<AnimatedRingProps> = ({
   progress,
   size = 120,
   strokeWidth = 8,
-  color = Colors.primary,
-  trackColor = Colors.surfaceLight,
+  color,
+  trackColor,
   children,
 }) => {
+  const { theme } = useUnistyles();
+  const activeColor = color || theme.colors.primary;
+  const activeTrackColor = trackColor || theme.colors.surfaceLight;
+
   const animatedProgress = useSharedValue(0);
   const radius = (size - strokeWidth) / 2;
   const circumference = 2 * Math.PI * radius;
@@ -52,7 +56,7 @@ export const AnimatedRing: React.FC<AnimatedRingProps> = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={trackColor}
+          stroke={activeTrackColor}
           strokeWidth={strokeWidth}
           fill="transparent"
         />
@@ -61,7 +65,7 @@ export const AnimatedRing: React.FC<AnimatedRingProps> = ({
           cx={size / 2}
           cy={size / 2}
           r={radius}
-          stroke={color}
+          stroke={activeColor}
           strokeWidth={strokeWidth}
           fill="transparent"
           strokeLinecap="round"
@@ -76,7 +80,7 @@ export const AnimatedRing: React.FC<AnimatedRingProps> = ({
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   container: {
     justifyContent: "center",
     alignItems: "center",
@@ -88,4 +92,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-});
+}));

@@ -1,7 +1,6 @@
 import { GlassCard } from "@/components/cards/GlassCard";
 import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import { logout } from "@/redux/slices/authSlice";
 import { clearDevice } from "@/redux/slices/deviceSlice";
 import { clearHealth } from "@/redux/slices/healthSlice";
@@ -14,11 +13,13 @@ import {
 } from "@/redux/slices/settingsSlice";
 import type { RootState } from "@/redux/store";
 import type React from "react";
-import { Alert, StyleSheet, Text, View } from "react-native";
+import { Alert, Text, View } from "react-native";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
 
 export const SettingsScreen: React.FC = () => {
+  const { theme } = useUnistyles();
   const dispatch = useDispatch();
   const { user } = useSelector((state: RootState) => state.auth);
   const settings = useSelector((state: RootState) => state.settings);
@@ -46,7 +47,7 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Profile */}
       <Animated.View entering={FadeInDown.delay(100).duration(400)}>
-        <GlassCard glowColor={Colors.primary} style={styles.card}>
+        <GlassCard glowColor={theme.colors.primary} style={styles.card}>
           <Text style={styles.sectionLabel}>PROFILE</Text>
           <View style={styles.profileRow}>
             <View style={styles.avatar}>
@@ -62,37 +63,37 @@ export const SettingsScreen: React.FC = () => {
 
       {/* Daily Goals */}
       <Animated.View entering={FadeInDown.delay(200).duration(400)}>
-        <GlassCard glowColor={Colors.chartCyan} style={styles.card}>
+        <GlassCard glowColor={theme.colors.chartCyan} style={styles.card}>
           <Text style={styles.sectionLabel}>DAILY GOALS</Text>
           <GoalRow
             label="Steps"
             value={settings.dailyStepGoal.toLocaleString()}
-            color={Colors.chartCyan}
+            color={theme.colors.chartCyan}
           />
           <GoalRow
             label="Calories"
             value={`${settings.dailyCalorieGoal} kcal`}
-            color={Colors.chartPurple}
+            color={theme.colors.chartPurple}
           />
           <GoalRow
             label="Distance"
             value={`${settings.dailyDistanceGoalKm} km`}
-            color={Colors.chartGreen}
+            color={theme.colors.chartGreen}
           />
           <NeoButton
             title="RESET TO DEFAULTS"
             onPress={() => dispatch(resetGoals())}
             variant="ghost"
-            color={Colors.textTertiary}
+            color={theme.colors.textTertiary}
             size="sm"
-            style={{ marginTop: Spacing.md }}
+            style={{ marginTop: theme.spacing.md }}
           />
         </GlassCard>
       </Animated.View>
 
       {/* Preferences */}
       <Animated.View entering={FadeInDown.delay(300).duration(400)}>
-        <GlassCard glowColor={Colors.secondary} style={styles.card}>
+        <GlassCard glowColor={theme.colors.secondary} style={styles.card}>
           <Text style={styles.sectionLabel}>PREFERENCES</Text>
           <View style={styles.prefRow}>
             <Text style={styles.prefLabel}>Unit System</Text>
@@ -103,7 +104,9 @@ export const SettingsScreen: React.FC = () => {
                   title={unit === "metric" ? "KM" : "MI"}
                   onPress={() => dispatch(setUnits(unit))}
                   variant={settings.units === unit ? "filled" : "ghost"}
-                  color={settings.units === unit ? Colors.secondary : Colors.textTertiary}
+                  color={
+                    settings.units === unit ? theme.colors.secondary : theme.colors.textTertiary
+                  }
                   size="sm"
                   style={{ flex: 1, marginHorizontal: 4 }}
                 />
@@ -115,7 +118,7 @@ export const SettingsScreen: React.FC = () => {
 
       {/* App Info */}
       <Animated.View entering={FadeInDown.delay(400).duration(400)}>
-        <GlassCard glowColor={Colors.textTertiary} style={styles.card}>
+        <GlassCard glowColor={theme.colors.textTertiary} style={styles.card}>
           <Text style={styles.sectionLabel}>APP</Text>
           <InfoRow label="Version" value="1.0.0" />
           <InfoRow label="Build" value="2026.03.21" />
@@ -129,9 +132,9 @@ export const SettingsScreen: React.FC = () => {
         <NeoButton
           title="LOG OUT"
           onPress={handleLogout}
-          color={Colors.error}
+          color={theme.colors.error}
           size="lg"
-          style={{ marginBottom: Spacing.xxl }}
+          style={{ marginBottom: theme.spacing.xxl }}
         />
       </Animated.View>
     </ScreenWrapper>
@@ -159,21 +162,26 @@ const InfoRow: React.FC<{ label: string; value: string }> = ({ label, value }) =
   </View>
 );
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   header: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   title: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.xxl,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   card: {
-    marginBottom: Spacing.lg,
+    marginBottom: theme.spacing.lg,
   },
   sectionLabel: {
-    ...Typography.label,
-    color: Colors.textSecondary,
-    marginBottom: Spacing.md,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textSecondary,
+    marginBottom: theme.spacing.md,
   },
   // Profile
   profileRow: {
@@ -184,41 +192,44 @@ const styles = StyleSheet.create({
     width: 48,
     height: 48,
     borderRadius: 16,
-    backgroundColor: Colors.primaryGlow,
+    backgroundColor: theme.colors.primaryGlow,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: Spacing.md,
+    marginRight: theme.spacing.md,
     borderWidth: 1,
-    borderColor: `${Colors.primary}40`,
+    borderColor: `${theme.colors.primary}40`,
   },
   avatarText: {
-    ...Typography.h2,
-    color: Colors.primary,
+    fontSize: theme.fontSize.xl,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    color: theme.colors.primary,
   },
   profileName: {
-    ...Typography.bodyBold,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.body,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
   },
   profileEmail: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
   },
   // Goals
   goalRow: {
     flexDirection: "row",
     alignItems: "center",
-    paddingVertical: Spacing.sm,
+    paddingVertical: theme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceLight,
+    borderBottomColor: theme.colors.surfaceLight,
   },
   goalDot: {
     width: 24,
     height: 24,
     borderRadius: 8,
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceLight,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: Spacing.md,
+    marginRight: theme.spacing.md,
   },
   goalDotInner: {
     width: 10,
@@ -226,12 +237,13 @@ const styles = StyleSheet.create({
     borderRadius: 5,
   },
   goalLabel: {
-    ...Typography.body,
-    color: Colors.textSecondary,
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textSecondary,
     flex: 1,
   },
   goalValue: {
-    ...Typography.bodyBold,
+    fontSize: theme.fontSize.body,
+    fontWeight: "700",
   },
   // Prefs
   prefRow: {
@@ -240,8 +252,8 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
   },
   prefLabel: {
-    ...Typography.body,
-    color: Colors.textSecondary,
+    fontSize: theme.fontSize.body,
+    color: theme.colors.textSecondary,
   },
   unitToggle: {
     flexDirection: "row",
@@ -251,17 +263,17 @@ const styles = StyleSheet.create({
   infoRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    paddingVertical: Spacing.sm,
+    paddingVertical: theme.spacing.sm,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceLight,
+    borderBottomColor: theme.colors.surfaceLight,
   },
   infoLabel: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
   },
   infoValue: {
-    ...Typography.caption,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textPrimary,
     fontWeight: "700",
   },
-});
+}));

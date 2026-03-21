@@ -1,7 +1,6 @@
 import { Buffer } from "buffer";
 import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { BorderRadius, Colors, Spacing, Typography } from "@/constants";
 import {
   addSyncLog,
   clearSyncLogs,
@@ -11,19 +10,11 @@ import {
 } from "@/redux/slices/deviceSlice";
 import { addDailyRecord, setTodaySteps } from "@/redux/slices/healthSlice";
 import type { RootState } from "@/redux/store";
-import type React from "react";
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  Alert,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from "react-native";
+import { Alert, Platform, ScrollView, Text, TouchableOpacity, View } from "react-native";
 import { BleManager, State as BleState } from "react-native-ble-plx";
 import Animated, { FadeInDown } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
 
 // ─── CASIO BLE CONSTANTS ─────────────────────────────────────────────────────
@@ -36,14 +27,16 @@ const FILE_DATA_DUMP = "26eb0024-b012-49a8-b1f8-394fb2032b0f";
 const bleManager = new BleManager();
 
 export const SyncScreen: React.FC = () => {
+  const { theme } = useUnistyles();
   const dispatch = useDispatch();
   const { connectionStatus, syncLogs } = useSelector((state: RootState) => state.device);
+  // biome-ignore lint/suspicious/noExplicitAny: BleDevice type not imported yet
   const [connectedDevice, setConnectedDevice] = useState<any>(null);
   const [isSyncing, setIsSyncing] = useState(false);
 
-  const sysSubRef = useRef<any>(null);
-  const fileCmdSubRef = useRef<any>(null);
-  const fileDataSubRef = useRef<any>(null);
+  const sysSubRef = useRef<import("react-native-ble-plx").Subscription | null>(null);
+  const fileCmdSubRef = useRef<import("react-native-ble-plx").Subscription | null>(null);
+  const fileDataSubRef = useRef<import("react-native-ble-plx").Subscription | null>(null);
   const scrollViewRef = useRef<ScrollView>(null);
   const fileBuffer = useRef("");
   const expectedFileBytes = useRef(0);
@@ -67,10 +60,10 @@ export const SyncScreen: React.FC = () => {
     [dispatch],
   );
 
-  const bcdByte = (hexStr: string): number => {
+  const bcdByte = useCallback((hexStr: string): number => {
     const b = Number.parseInt(hexStr, 16);
     return (b >> 4) * 10 + (b & 0x0f);
-  };
+  }, []);
 
   const parseSystemHex = useCallback(
     (hex: string) => {
@@ -174,10 +167,11 @@ export const SyncScreen: React.FC = () => {
         fileReceiveResolve.current = null;
       }
     },
-    [addLog, dispatch],
+    [addLog, dispatch, bcdByte],
   );
 
   const sendToWatch = async (
+    // biome-ignore lint/suspicious/noExplicitAny: BleDevice type not imported yet
     targetDevice: any,
     characteristic: string,
     hex: string,
@@ -200,14 +194,15 @@ export const SyncScreen: React.FC = () => {
         );
       }
       addLog(characteristic === FILE_WRITE_AND_NOTIFY ? "FILE_TX" : "TX", `→ ${hex}`);
-    } catch (e: any) {
-      addLog("ERR", `Write fail: ${e.message}`);
+    } catch (e: unknown) {
+      addLog("ERR", `Write fail: ${e instanceof Error ? e.message : String(e)}`);
       throw e;
     }
   };
 
   const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
 
+  // biome-ignore lint/suspicious/noExplicitAny: BleDevice type not imported yet
   const syncSequence = async (overrideDevice?: any) => {
     const device = overrideDevice || connectedDevice;
     if (!device || isSyncing) return;
@@ -243,7 +238,7 @@ export const SyncScreen: React.FC = () => {
         fileReceiveResolve.current = resolve;
       });
 
-      let timeoutId: ReturnType<typeof setTimeout>;
+      let timeoutId: ReturnType<typeof setTimeout> | undefined;
       const timeoutPromise = new Promise<void>((resolve) => {
         timeoutId = setTimeout(() => {
           addLog("WARN", "File transfer timeout – parsing what we have");
@@ -253,13 +248,13 @@ export const SyncScreen: React.FC = () => {
 
       await fileReq("0011000000");
       await Promise.race([dataReceived, timeoutPromise]);
-      clearTimeout(timeoutId!);
+      if (timeoutId) clearTimeout(timeoutId);
 
       await fileReq("0411000000");
       addLog("SYS", "── SYNC COMPLETE ──");
       dispatch(setConnectionStatus("connected"));
-    } catch (e: any) {
-      addLog("ERR", `Sync aborted: ${e.message}`);
+    } catch (e: unknown) {
+      addLog("ERR", `Sync aborted: ${e instanceof Error ? e.message : String(e)}`);
       dispatch(setConnectionStatus("connected"));
     } finally {
       setIsSyncing(false);
@@ -306,14 +301,14 @@ export const SyncScreen: React.FC = () => {
           sysSubRef.current = connected.monitorCharacteristicForService(
             SERVICE_UUID,
             SYS_NOTIFY_AND_WRITE,
-            (err: any, char: any) => {
+            (err, char) => {
               if (char?.value) parseSystemHex(Buffer.from(char.value, "base64").toString("hex"));
             },
           );
           fileCmdSubRef.current = connected.monitorCharacteristicForService(
             SERVICE_UUID,
             FILE_WRITE_AND_NOTIFY,
-            (err: any, char: any) => {
+            (err, char) => {
               if (char?.value)
                 parseFileCommandHex(Buffer.from(char.value, "base64").toString("hex"));
             },
@@ -321,7 +316,7 @@ export const SyncScreen: React.FC = () => {
           fileDataSubRef.current = connected.monitorCharacteristicForService(
             SERVICE_UUID,
             FILE_DATA_DUMP,
-            (err: any, char: any) => {
+            (err, char) => {
               if (char?.value) parseFileDataHex(Buffer.from(char.value, "base64").toString("hex"));
             },
           );
@@ -329,8 +324,8 @@ export const SyncScreen: React.FC = () => {
           await delay(1500);
           addLog("SYS", "READY – Auto-pulling data...");
           syncSequence(connected);
-        } catch (e: any) {
-          addLog("ERR", `Connection failed: ${e.message}`);
+        } catch (e: unknown) {
+          addLog("ERR", `Connection failed: ${e instanceof Error ? e.message : String(e)}`);
           dispatch(setConnectionStatus("disconnected"));
         }
       }
@@ -379,8 +374,8 @@ export const SyncScreen: React.FC = () => {
             {
               backgroundColor:
                 connectionStatus === "connected" || connectionStatus === "syncing"
-                  ? Colors.success
-                  : Colors.error,
+                  ? theme.colors.success
+                  : theme.colors.error,
             },
           ]}
         />
@@ -408,6 +403,7 @@ export const SyncScreen: React.FC = () => {
           onContentSizeChange={() => scrollViewRef.current?.scrollToEnd({ animated: true })}
         >
           {syncLogs.map((log, i) => (
+            // biome-ignore lint/suspicious/noArrayIndexKey: logs don't have unique ids
             <View key={i} style={styles.logRow}>
               <Text style={styles.logTime}>[{log.time}]</Text>
               <Text style={[styles.logType, { color: getLogColor(log.type) }]}>
@@ -422,7 +418,7 @@ export const SyncScreen: React.FC = () => {
       <NeoButton
         title={isSyncing ? "DOWNLOADING…" : connectedDevice ? "FORCE SYNC" : "SCAN & CONNECT"}
         onPress={() => (connectedDevice ? syncSequence() : startScan())}
-        color={connectedDevice ? Colors.success : Colors.info}
+        color={connectedDevice ? theme.colors.success : theme.colors.info}
         disabled={isSyncing}
         size="lg"
       />
@@ -430,20 +426,22 @@ export const SyncScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   header: {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   title: {
-    ...Typography.h1,
-    color: Colors.textPrimary,
+    fontSize: theme.fontSize.xxl,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   subtitle: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
     marginTop: 2,
   },
   statusDot: {
@@ -454,24 +452,26 @@ const styles = StyleSheet.create({
   terminalContainer: {
     flex: 1,
     backgroundColor: "#121214",
-    borderRadius: BorderRadius.lg,
+    borderRadius: theme.borderRadius.lg,
     borderWidth: 1,
-    borderColor: Colors.surfaceLight,
+    borderColor: theme.colors.surfaceLight,
     overflow: "hidden",
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   terminalHeader: {
     flexDirection: "row",
     justifyContent: "space-between",
-    backgroundColor: Colors.surface,
-    padding: Spacing.md,
+    backgroundColor: theme.colors.surface,
+    padding: theme.spacing.md,
     borderBottomWidth: 1,
-    borderBottomColor: Colors.surfaceLight,
+    borderBottomColor: theme.colors.surfaceLight,
   },
   terminalTitle: {
-    ...Typography.label,
-    color: Colors.textTertiary,
-    fontSize: 10,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textTertiary,
   },
   terminalActions: {
     flexDirection: "row",
@@ -481,36 +481,40 @@ const styles = StyleSheet.create({
     padding: 2,
   },
   copyBtn: {
-    ...Typography.label,
-    color: Colors.secondary,
-    fontSize: 10,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.secondary,
   },
   clearBtn: {
-    ...Typography.label,
-    color: Colors.info,
-    fontSize: 10,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.info,
   },
   terminalScroll: {
-    padding: Spacing.md,
+    padding: theme.spacing.md,
   },
   logRow: {
     flexDirection: "row",
     marginBottom: 6,
   },
   logTime: {
-    ...Typography.mono,
-    color: Colors.textDisabled,
+    fontFamily: "SpaceMono", // global generic if mono not loaded
+    color: theme.colors.textDisabled,
     marginRight: 8,
   },
   logType: {
-    ...Typography.mono,
+    fontFamily: "SpaceMono",
     width: 80,
     fontWeight: "bold",
   },
   logMsg: {
-    ...Typography.mono,
+    fontFamily: "SpaceMono",
     color: "#E5E5EA",
     flex: 1,
     flexWrap: "wrap",
   },
-});
+}));

@@ -2,16 +2,17 @@ import { GlassCard } from "@/components/cards/GlassCard";
 import { Input } from "@/components/common/Input";
 import { NeoButton } from "@/components/common/NeoButton";
 import { ScreenWrapper } from "@/components/layout/ScreenWrapper";
-import { Colors, Spacing, Typography } from "@/constants";
 import { loginFailure, loginStart, loginSuccess } from "@/redux/slices/authSlice";
 import type { RootState } from "@/redux/store";
 import type React from "react";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { Alert, KeyboardAvoidingView, Platform, Text, View } from "react-native";
 import Animated, { FadeInDown, FadeInUp } from "react-native-reanimated";
+import { StyleSheet, useUnistyles } from "react-native-unistyles";
 import { useDispatch, useSelector } from "react-redux";
 
 export const LoginScreen: React.FC = () => {
+  const { theme } = useUnistyles();
   const dispatch = useDispatch();
   const { isLoading, error } = useSelector((state: RootState) => state.auth);
   const [email, setEmail] = useState("");
@@ -34,8 +35,8 @@ export const LoginScreen: React.FC = () => {
           displayName: email.split("@")[0],
         }),
       );
-    } catch (e: any) {
-      dispatch(loginFailure(e.message || "Login failed"));
+    } catch (e: unknown) {
+      dispatch(loginFailure(e instanceof Error ? e.message : "Login failed"));
     }
   };
 
@@ -53,8 +54,8 @@ export const LoginScreen: React.FC = () => {
           photoUrl: undefined,
         }),
       );
-    } catch (e: any) {
-      dispatch(loginFailure(e.message || "Google sign-in failed"));
+    } catch (e: unknown) {
+      dispatch(loginFailure(e instanceof Error ? e.message : "Google sign-in failed"));
     }
   };
 
@@ -76,7 +77,7 @@ export const LoginScreen: React.FC = () => {
 
         {/* Login Card */}
         <Animated.View entering={FadeInDown.delay(300).duration(600)}>
-          <GlassCard glowColor={Colors.primary} style={styles.loginCard}>
+          <GlassCard glowColor={theme.colors.primary} style={styles.loginCard}>
             <Text style={styles.cardTitle}>Sign In</Text>
 
             <Input
@@ -101,7 +102,7 @@ export const LoginScreen: React.FC = () => {
             <NeoButton
               title={isLoading ? "SIGNING IN..." : "SIGN IN"}
               onPress={handleEmailLogin}
-              color={Colors.primary}
+              color={theme.colors.primary}
               disabled={isLoading}
               size="lg"
               style={styles.loginBtn}
@@ -117,7 +118,7 @@ export const LoginScreen: React.FC = () => {
               title="CONTINUE WITH GOOGLE"
               onPress={handleGoogleLogin}
               variant="outline"
-              color={Colors.textSecondary}
+              color={theme.colors.textSecondary}
               disabled={isLoading}
               size="md"
             />
@@ -134,82 +135,89 @@ export const LoginScreen: React.FC = () => {
   );
 };
 
-const styles = StyleSheet.create({
+const styles = StyleSheet.create((theme) => ({
   container: {
     flex: 1,
     justifyContent: "center",
-    paddingVertical: Spacing.huge,
+    paddingVertical: theme.spacing.huge,
   },
   brandSection: {
     alignItems: "center",
-    marginBottom: Spacing.xxxl,
+    marginBottom: theme.spacing.xxxl,
   },
   logoContainer: {
     width: 80,
     height: 80,
     borderRadius: 24,
-    backgroundColor: Colors.primaryGlow,
+    backgroundColor: theme.colors.primaryGlow,
     justifyContent: "center",
     alignItems: "center",
-    marginBottom: Spacing.lg,
+    marginBottom: theme.spacing.lg,
     borderWidth: 1,
-    borderColor: `${Colors.primary}40`,
+    borderColor: `${theme.colors.primary}40`,
   },
   logoIcon: {
     fontSize: 36,
   },
   brandTitle: {
-    ...Typography.hero,
-    color: Colors.textPrimary,
-    fontSize: 36,
+    fontSize: theme.fontSize.hero,
+    fontWeight: "800",
+    letterSpacing: -1,
+    color: theme.colors.textPrimary,
   },
   brandSubtitle: {
-    ...Typography.label,
-    color: Colors.primary,
-    fontSize: 14,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    fontWeight: "600",
+    color: theme.colors.primary,
     letterSpacing: 8,
     marginTop: -4,
   },
   tagline: {
-    ...Typography.caption,
-    color: Colors.textTertiary,
-    marginTop: Spacing.sm,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textTertiary,
+    marginTop: theme.spacing.sm,
   },
   loginCard: {
-    marginBottom: Spacing.xl,
+    marginBottom: theme.spacing.xl,
   },
   cardTitle: {
-    ...Typography.h2,
-    color: Colors.textPrimary,
-    marginBottom: Spacing.xl,
+    fontSize: theme.fontSize.xl,
+    fontWeight: "700",
+    letterSpacing: -0.5,
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.xl,
   },
   errorText: {
-    ...Typography.caption,
-    color: Colors.error,
-    marginBottom: Spacing.md,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.error,
+    marginBottom: theme.spacing.md,
     textAlign: "center",
   },
   loginBtn: {
-    marginTop: Spacing.sm,
+    marginTop: theme.spacing.sm,
   },
   divider: {
     flexDirection: "row",
     alignItems: "center",
-    marginVertical: Spacing.xl,
+    marginVertical: theme.spacing.xl,
   },
   dividerLine: {
     flex: 1,
     height: 1,
-    backgroundColor: Colors.surfaceLight,
+    backgroundColor: theme.colors.surfaceLight,
   },
   dividerText: {
-    ...Typography.label,
-    color: Colors.textTertiary,
-    marginHorizontal: Spacing.lg,
+    fontSize: theme.fontSize.xs,
+    textTransform: "uppercase",
+    letterSpacing: 1,
+    fontWeight: "600",
+    color: theme.colors.textTertiary,
+    marginHorizontal: theme.spacing.lg,
   },
   footerText: {
-    ...Typography.caption,
-    color: Colors.textDisabled,
+    fontSize: theme.fontSize.caption,
+    color: theme.colors.textDisabled,
     textAlign: "center",
   },
-});
+}));
